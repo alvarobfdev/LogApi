@@ -132,16 +132,17 @@ class ApiController extends Controller
             list($uidPdf, $pdfPath) = $this->savePdf($factura, $tmpDir);
 
             $data = [
-                "pathToImage" => public_path()."/logival/img/logo-transparente.png"
+                "pathToImage" => public_path()."/logival/img/logo-transparente.png",
+                "numFactura" => $factura["id"]["serfac"] . "/" . $factura["id"]["ejefac"] . "/" . $factura["id"]["numfac"],
+                "fechaFactura" => Carbon::parse($factura['fecfac'])->format("d/m/Y")
             ];
 
             try {
-                \Mail::send("emails.invoice", $data, function ($message) use ($pdfPath, $cliente, $factura) {
+                \Mail::send("emails.invoice", $data, function ($message) use ($pdfPath, $cliente, $factura, $data) {
                     $message->from("logival@logival.es", "Aviso de factura");
                     $message->to($cliente->email, $cliente->nomacc);
-                    $message->subject("Emisión de factura " . $factura["id"]["serfac"] . "/" . $factura["id"]["ejefac"] . "/" . $factura["id"]["numfac"]);
+                    $message->subject("Emisión de factura " . $data["numFactura"]);
                     $message->attach($pdfPath);
-
                 });
             }
             catch (\Exception $e)
@@ -149,7 +150,7 @@ class ApiController extends Controller
                 dd($e->getMessage());
             }
 
-            $facturaWeb = FacturaWeb::where("ejercicio", $factura["id"]["ejefac"])->where("num_factura", $factura["id"]["numfac"])->where("cliente_id", $factura["id"]["codcli"])->first();
+            $facturaWeb = FacturaWeb::where("ejercicio", $factura["id"]["ejefac"])->where("num_factura", $factura["id"]["numfac"])->first();
 
             if($facturaWeb) {
                 $facturaWeb->email_sent = 1;
