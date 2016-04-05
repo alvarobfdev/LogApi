@@ -243,14 +243,14 @@ class AppController extends Controller
         }
     }
 
-
-
-
     public function getTestDasanciApi() {
         $products = WoocommerceApi::getProducts(["filter[limit]"=>"200"]);
         dd($products);
     }
 
+    public function getIndex() {
+        return view("admin.starter");
+    }
 
 
 

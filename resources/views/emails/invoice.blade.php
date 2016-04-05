@@ -261,7 +261,14 @@
                 </div>
 
                 <div style="Margin-left: 20px;Margin-right: 20px;">
-                    <h3 style="Margin-top: 0;Margin-bottom: 0;font-style: normal;font-weight: normal;font-size: 16px;line-height: 24px;color: #788991;text-align: center;">Emisi&#243;n de factura {{$numFactura}}</h3><p style="Margin-top: 12px;Margin-bottom: 0;"><span>Estimado Cliente, le adjuntamos junto a este e-mail la factura con fecha {{$fechaFactura}} con numeraci&#243;n <strong>{{$numFactura}}.&nbsp;</strong></span></p><p style="Margin-top: 20px;Margin-bottom: 20px;"><span>Si tiene cualquier duda puede ponerse en contacto con nosotros a trav&#233;s de la direcci&#243;n admon@logival.es</span></p>
+                    <h3 style="Margin-top: 0;Margin-bottom: 0;font-style: normal;font-weight: normal;font-size: 16px;line-height: 24px;color: #788991;text-align: center;">Emisi&#243;n de facturas</h3><p style="Margin-top: 12px;Margin-bottom: 0;"><span>Estimado Cliente, le adjuntamos junto a este e-mail las siguientes facturas:</span><br><br>
+                            <ul>
+                                @foreach($facturas as $factura)
+                                <li>
+                                    <strong>{{$factura["id"]["serfac"]}}/{{$factura["id"]["ejefac"]}}/{{$factura["id"]["numfac"]}} ({{\Carbon\Carbon::parse($factura['fecfac'])->format("d/m/Y")}})</strong>
+                                </li>
+                                @endforeach
+                            </ul></p><p style="Margin-top: 20px;Margin-bottom: 20px;"><span>Si tiene cualquier duda puede ponerse en contacto con nosotros a trav&#233;s de la direcci&#243;n admon@logival.es</span></p>
                 </div>
 
                 <div style="Margin-left: 20px;Margin-right: 20px;">

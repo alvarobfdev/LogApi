@@ -116,14 +116,88 @@ class ApiController extends Controller
     {
         $data = \Request::get("jsonData");
         $facturas = json_decode($data, true);
+        $tmpUid = uniqid();
+        $facturasInfo = array();
         foreach($facturas as $factura) {
-            $this->sendInvoiceToClient($factura);
+            $this->prepareInvoiceForSending($factura, $tmpUid, $facturasInfo);
         }
+        $this->sendInvoicesToClient($tmpUid, $facturasInfo);
+        \File::deleteDirectory(storage_path("app")."/tmp/".$tmpUid);
         return "ok";
     }
 
-    private function sendInvoiceToClient($factura) {
+    private function prepareInvoiceForSending($factura, $tmpUid, &$facturasInfo) {
+        $codCli = $factura["codcli"];
+        $cliente = Cliente::where("codcli", $codCli)->firstOrFail();
+        if($cliente->email) {
+            $tmpDir = "/tmp/" . $tmpUid . "/emails/" . $cliente->email;
+            $this->savePdf($factura, $tmpDir);
+            if(!array_key_exists($cliente->email, $facturasInfo)) {
+                $facturasInfo[$cliente->email] = array();
+            }
+            $facturasInfo[$cliente->email][] = $factura;
+        }
+    }
 
+    private function sendInvoicesToClient($tmpUid, $facturasInfo = array())
+    {
+
+        $tmpDir = "/tmp/" . $tmpUid . "/emails";
+        $list = \File::directories(storage_path("app") . $tmpDir);
+        foreach ($list as $directory) {
+            $invoicesDir = $directory;
+            $email = basename($directory);
+            $uid = uniqid();
+            $zip = new \Chumper\Zipper\Zipper;
+            $zipPath = storage_path() . "/app/tmp/$uid/facturas.zip";
+            $zip->make($zipPath);
+            $files = glob($invoicesDir);
+            $zip->add($files);
+            $zip->close();
+            $this->sendInvoicesEmail($zipPath, $email, $facturasInfo);
+        }
+    }
+
+    private function sendInvoicesEmail($zipPath, $email, $facturasInfo) {
+
+        $data = [
+            "pathToImage" => public_path()."/logival/img/logo-transparente.png",
+            "facturas" => $facturasInfo[$email]
+        ];
+
+        $codCli = $facturasInfo[$email][0]["codcli"];
+        $cliente = Cliente::where("codcli", $codCli)->firstOrFail();
+
+
+        try {
+            \Mail::send("emails.invoice", $data, function ($message) use ($zipPath, $cliente, $email, $data) {
+                $message->from("logival@logival.es", "Aviso de factura");
+                $message->to($email, $cliente->nomcli);
+                $message->subject("Emisión de facturas");
+                $message->attach($zipPath);
+            });
+        }
+        catch (\Exception $e)
+        {
+            dd($e->getMessage());
+        }
+
+        foreach($data["facturas"] as $factura) {
+
+            $facturaWeb = FacturaWeb::where("ejercicio", $factura["id"]["ejefac"])->where("num_factura", $factura["id"]["numfac"])->first();
+
+            if ($facturaWeb) {
+                $facturaWeb->email_sent = 1;
+                $facturaWeb->save();
+            }
+
+        }
+        \File::deleteDirectory(dirname($zipPath));
+        return "ok";
+
+    }
+
+        /*
         $codCli = $factura["codcli"];
         $cliente = Cliente::where("codcli", $codCli)->firstOrFail();
         if($cliente && $cliente->email) {
@@ -159,8 +233,9 @@ class ApiController extends Controller
             \File::deleteDirectory(storage_path("app").$tmpDir);
 
             return "ok";
-        }
-    }
+
+        }*/
+
 
     private function groupsInvoice($factura)
     {

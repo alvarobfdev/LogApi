@@ -27,8 +27,11 @@ Route::get('/', function () {
 */
 
 Route::group(['middleware' => ['web']], function () {
+    Route::controller('/app/expediciones', 'ExpedicionesController');
+    Route::controller('/app/clientes', 'ClienteController');
     Route::controller('/app', 'AppController');
     Route::controller('/barcode', 'BarcodeController');
+
 
 });
 
