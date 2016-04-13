@@ -9,7 +9,7 @@
 namespace App\Http\Controllers;
 
 
-use App\CtsqlExport;
+use App\Ctsql;
 use App\ProductsEdiModel;
 use App\WoocommerceApi;
 
@@ -19,7 +19,7 @@ class AppController extends Controller
     public static $toybagsCod = 176;
     public function getTestCtsql() {
         $query = "SELECT * FROM artic WHERE codcli=139 AND (codart='BH1257' OR codart='BH1259' OR codart='BH1258')";
-        $exporter = new CtsqlExport();
+        $exporter = new Ctsql();
         $resultArray = $exporter->ctsqlExport($query);
         if(is_array($resultArray) && count($resultArray) > 0) {
             $json = $resultArray[0];
@@ -145,7 +145,7 @@ class AppController extends Controller
 
         $query = "SELECT * FROM artic WHERE codcli=$cliente AND ($queryCods)";
 
-        $productsJson = CtsqlExport::ctsqlExport($query);
+        $productsJson = Ctsql::ctsqlExport($query);
         $products = json_decode($productsJson[0]);
         if(!$products->success) {
             return false;
@@ -160,7 +160,7 @@ class AppController extends Controller
         $query = "SELECT * FROM albaran where codemp='1' and coddel='1' and codcli='$cliente' and tipalb='S' and ejerci='$ejercicio' and numalb='$numAlbaran'";
 
 
-        $albaranJson = CtsqlExport::ctsqlExport($query);
+        $albaranJson = Ctsql::ctsqlExport($query);
         $albaran = json_decode($albaranJson[0]);
 
         if(!$albaran->success) {
@@ -177,7 +177,7 @@ class AppController extends Controller
 
     private function getLinAlbaran($ejercicio, $cliente, $numAlbaran, &$linAlbaran) {
         $query = "SELECT * FROM linalbar where codemp='1' and coddel='1' and codcli='$cliente' and tipalb='S' and ejerci='$ejercicio' and numalb='$numAlbaran'";
-        $linAlbarJson = CtsqlExport::ctsqlExport($query);
+        $linAlbarJson = Ctsql::ctsqlExport($query);
         $linAlbaran = json_decode($linAlbarJson[0]);
 
         if(!$linAlbaran->success) {
@@ -191,22 +191,20 @@ class AppController extends Controller
     }
 
 
-    public function getDasanciProducts() {
+    public function getDasanciProducts($codcli) {
         $productos = [];
-        $query = "SELECT * FROM artic where codcli = 158 and codemp = 1";
-        $prods = CtsqlExport::ctsqlExport($query);
-        $query = "SELECT * FROM ocupalmac where codcli = 158 and codemp = 1 and coddel=1";
-        $stock = CtsqlExport::ctsqlExport($query);
+        $query = "SELECT * FROM artic where (codcli = $codcli) and codemp = 1";
+        $prods = Ctsql::ctsqlExport($query);
+        $query = "SELECT * FROM ocupalmac where (codcli = $codcli) and codemp = 1 and coddel=1";
+        $stock = Ctsql::ctsqlExport($query);
         $stock = json_decode($stock[0]);
         $prods = json_decode($prods[0]);
         foreach($prods->data as $prod) {
+            $productos[$prod->codart]["cantidad"] = 0;
+            $productos[$prod->codart]["descripcion"] = $prod->descri;
             foreach($stock->data as $prodStock) {
-                if($prodStock->codart == $prod->codart) {
-                    if(!isset($productos[$prod->codart]["cantidad"]))
-                        $productos[$prod->codart]["cantidad"] = 0;
+                if($prodStock->codart == $prod->codart && $prod->codcli == $prodStock->codcli) {
                     $productos[$prod->codart]["cantidad"] += $prodStock->udsart;
-                    $productos[$prod->codart]["descripcion"] = $prod->descri;
-
                 }
             }
         }
@@ -252,6 +250,10 @@ class AppController extends Controller
         return view("admin.starter");
     }
 
+
+    public function getDasanciTest() {
+
+    }
 
 
 

@@ -18,6 +18,7 @@ class WoocommerceApi
     private static $me = null;
 
 
+
     /**
      * @return WoocommerceApi|null
      */
@@ -40,6 +41,64 @@ class WoocommerceApi
         $respone = file_get_contents($url);
         $products = json_decode($respone);
         return $products;
+    }
+
+    public static function countProducts($params = array()) {
+        $me = self::getInstance();
+        $url = $me->getEncodedUrl("GET", "products/count", $params);
+        $respone = file_get_contents($url);
+        $products = json_decode($respone);
+        return $products->count;
+    }
+
+    public static function getOrders($params = array()) {
+        $me = self::getInstance();
+        $url = $me->getEncodedUrl("GET", "orders", $params);
+        $respone = file_get_contents($url);
+        $products = json_decode($respone);
+        return $products;
+    }
+
+    public static function updateProducts($products = array()) {
+        $me = self::getInstance();
+        $data["products"] = $products;
+        $url = $me->getEncodedUrl("POST", "products/bulk");
+        $aHTTP = array(
+            'http' => // The wrapper to be used
+                array(
+                    'method'  => 'POST', // Request Method
+                    // Request Headers Below
+                    'header'  => 'Content-type: application/json',
+                    'content' => json_encode($data)
+                )
+        );
+
+        $context = stream_context_create($aHTTP);
+        $contents = file_get_contents($url, false, $context);
+        return json_decode($contents);
+
+
+    }
+
+    public static function updateOrders($orders = array()) {
+        $me = self::getInstance();
+        $data["orders"] = $orders;
+        $url = $me->getEncodedUrl("POST", "orders/bulk");
+        $aHTTP = array(
+            'http' => // The wrapper to be used
+                array(
+                    'method'  => 'POST', // Request Method
+                    // Request Headers Below
+                    'header'  => 'Content-type: application/json',
+                    'content' => json_encode($data)
+                )
+        );
+
+        $context = stream_context_create($aHTTP);
+        $contents = file_get_contents($url, false, $context);
+        return json_decode($contents);
+
+
     }
 
     private function getRequestTokenUrl($requestObject) {

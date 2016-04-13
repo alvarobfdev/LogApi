@@ -9,10 +9,16 @@
 namespace App;
 
 
-class CtsqlExport
+class Ctsql
 {
     public static function ctsqlExport($query) {
         $args = "-q \"$query\"";
+        exec("java -jar ".storage_path("app/bin")."/CtsqlExport.jar $args", $output);
+        return $output;
+    }
+
+    public static function ctsqlImport($query) {
+        $args = "-q \"$query\" -u";
         exec("java -jar ".storage_path("app/bin")."/CtsqlExport.jar $args", $output);
         return $output;
     }

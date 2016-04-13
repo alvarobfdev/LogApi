@@ -9,7 +9,7 @@
 namespace App\Http\Controllers;
 
 
-use App\CtsqlExport;
+use App\Ctsql;
 
 class ClienteController extends Controller
 {
@@ -19,12 +19,12 @@ class ClienteController extends Controller
 
     public function getObtener() {
         $cod_cliente = \Request::get("cod_cliente");
-        $cliente = CtsqlExport::ctsqlExport("SELECT * FROM clientes where codcli =".$cod_cliente);
-        $albaranes = CtsqlExport::ctsqlExport(
+        $cliente = Ctsql::ctsqlExport("SELECT * FROM clientes where codcli =".$cod_cliente);
+        $albaranes = Ctsql::ctsqlExport(
             "SELECT * FROM albaran WHERE codemp = 1 AND coddel=1 AND codcli=$cod_cliente ORDER BY fecalb DESC LIMIT 0, 10"
         );
 
-        $pedidos = CtsqlExport::ctsqlExport(
+        $pedidos = Ctsql::ctsqlExport(
             "SELECT * FROM pedidos WHERE codemp=1 AND coddel=1 and codcli=$cod_cliente ORDER BY fecped DESC LIMIT 0, 10"
         );
 

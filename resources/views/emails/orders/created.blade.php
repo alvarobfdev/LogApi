@@ -1,0 +1,1 @@
+El pedido con nº <?=$num_pedido?> del cliente <?=$num_cliente?> ha sido CREADO vía web. Por favor, revise el pedido.
