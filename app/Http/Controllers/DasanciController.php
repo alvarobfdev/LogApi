@@ -22,10 +22,10 @@ class DasanciController extends Controller
 
     public function getSyncNewOrders() {
         $max_updated_at = EcommerceOrders::where("cliente_id", 158)->max("updated_at");
+        dd($max_updated_at);
         $orders = WoocommerceApi::getOrders(["filter[updated_at_min]"=>"$max_updated_at"]);
         foreach($orders->orders as $order) {
             if(Carbon::parse($order->updated_at)->timestamp > Carbon::parse($max_updated_at)->timestamp) {
-                dd($order);
                 $this->syncOrder($order);
             }
         }
@@ -147,7 +147,7 @@ class DasanciController extends Controller
 
 
 
-        if($this->orderExists($order)) {
+        if(!$this->orderExists($order)) {
             echo "Insertando en Multibase...<br>";
             $this->addOrderToMultibase($order);
             if(count($this->linesError) > 0) {
@@ -155,8 +155,7 @@ class DasanciController extends Controller
             }
         }
         else {
-            echo("HAY QUE ACTUALIZAR");
-            //$this->updateOrderOnMultibase();
+            //
         }
     }
 
