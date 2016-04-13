@@ -473,7 +473,7 @@ class DasanciController extends Controller
 
         \Mail::send("emails.orders.cancelled", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("alvaro@logival.es", "Yolanda");
+            $message->to("admon@logival.es", "Yolanda");
             $message->subject("Pedido ".$data["num_pedido"]." CANCELADO");
         });
     }
@@ -500,7 +500,7 @@ class DasanciController extends Controller
 
         \Mail::send("emails.orders.refunded", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("alvaro@logival.es", "Yolanda");
+            $message->to("admon@logival.es", "Yolanda");
             $message->subject("Pedido ".$data["num_pedido"]." DEVUELTO");
         });
     }
@@ -527,7 +527,7 @@ class DasanciController extends Controller
 
         \Mail::send("emails.orders.updated", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("alvaro@logival.es", "Yolanda");
+            $message->to("admon@logival.es", "Yolanda");
             $message->subject("Pedido ".$data["num_pedido"]." MODIFICADO");
         });
     }
@@ -544,7 +544,7 @@ class DasanciController extends Controller
 
         \Mail::send("emails.orders.created", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("alvaro@logival.es", "Yolanda");
+            $message->to("admon@logival.es", "Yolanda");
             $message->subject("Pedido ".$data["num_pedido"]." CREADO");
         });
     }
