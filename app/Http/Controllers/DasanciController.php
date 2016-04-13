@@ -22,7 +22,9 @@ class DasanciController extends Controller
 
     public function getSyncNewOrders() {
         $max_updated_at = EcommerceOrders::where("cliente_id", 158)->max("updated_at");
-        dd($max_updated_at);
+        if(!$max_updated_at) {
+            $max_updated_at = "1979-01-01 00:00:00";
+        }
         $orders = WoocommerceApi::getOrders(["filter[updated_at_min]"=>"$max_updated_at"]);
         foreach($orders->orders as $order) {
             if(Carbon::parse($order->updated_at)->timestamp > Carbon::parse($max_updated_at)->timestamp) {
