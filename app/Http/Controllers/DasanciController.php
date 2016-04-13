@@ -360,12 +360,13 @@ class DasanciController extends Controller
         }
         else {
             $orderDB = $this->getOrderDB($order);
-            if($order->status = "processing") {
+
+            if($order->status == "processing") {
                 $this->addOrderToMultibase($order);
                 $orderDB->multibase_sync = 1;
+                $this->sendNewOrderEmail($order);
             }
             $orderDB->save();
-            $this->sendNewOrderEmail($order);
         }
     }
 
