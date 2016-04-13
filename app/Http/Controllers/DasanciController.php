@@ -78,12 +78,14 @@ class DasanciController extends Controller
                 ];
             }
 
+            //Actualizamos cada 10 productos por limitaciones de la peticion HTTTP
             if(count($products) >= 10) {
                 $productsUpdated[] = WoocommerceApi::updateProducts($products);
                 $products = [];
             }
         }
 
+        //Actualizamos el resto de productos que quedan en el array
         if(count($products) >= 0) {
             $productsUpdated[] = WoocommerceApi::updateProducts($products);
         }
