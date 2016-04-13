@@ -26,6 +26,7 @@ class DasanciController extends Controller
         foreach($orders->orders as $order) {
 
             if(Carbon::parse($order->updated_at)->timestamp > Carbon::parse($max_updated_at)->timestamp) {
+                dd($order);
                 $this->syncOrder($order);
             }
         }
