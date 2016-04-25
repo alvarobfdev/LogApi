@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 
+use App\Artic;
 use App\Ctsql;
 use App\ProductsEdiModel;
 use App\WoocommerceApi;
@@ -16,7 +17,6 @@ use App\WoocommerceApi;
 class AppController extends Controller
 {
 
-    public static $toybagsCod = 176;
     public function getTestCtsql() {
         $query = "SELECT * FROM artic WHERE codcli=139 AND (codart='BH1257' OR codart='BH1259' OR codart='BH1258')";
         $exporter = new Ctsql();
@@ -28,10 +28,6 @@ class AppController extends Controller
             return $json;
         }
         return "Ha habido algún problema!";
-    }
-
-    public function getExportarEdi() {
-        return view("albaran.exportar-edi");
     }
 
     public function getAlbaranForEdi() {
@@ -74,121 +70,12 @@ class AppController extends Controller
         return $result;
     }
 
-    private function getBultos($codcli, $linAlbaran, $prods) {
-
-        if($codcli == self::$toybagsCod) {
-            $this->getBultosToyBags($linAlbaran, $prods);
-        }
 
 
-    }
-
-    private function getBultosToyBags($linAlbaran, $prods) {
-        $bultos = [];
-        foreach($linAlbaran as $lin) {
-            $codart = $lin->codart;
-            $codart = strtoupper($codart);
-
-            if($codart == 'T433-700' || $codart == 'T433-306' || $codart == 'T433-696') {
-                $this->setBultoQuantity($bultos, $lin, "DIA-1", [$codart=>1,$codart=>1,$codart=>1]);
-            }
-
-            if($codart == 'T424-015' || $codart == 'T424-282' || $codart == 'CR2000114' || $codart == 'CR2020114') {
-                $this->setBultoQuantity($bultos, $lin, "DIA-2", [$codart=>1, $codart=>1, $codart=1]);
-            }
-
-            if($codart == 'T100-024' || $codart == 'T100-282' || $codart == 'CR2000133' || $codart == 'CR2020133') {
-                $this->setBultoQuantity($bultos, $lin, "DIA-3", [$codart=>3, $codart=>3, $codart=3, $codart=>3]);
-            }
-
-            if($codart == 'T960-015' || $codart == 'T960-024' || $codart == 'CR2000114T' || $codart == 'CR2020114T') {
-                $this->setBultoQuantity($bultos, $lin, "DIA-4", [$codart=>1, $codart=>1, $codart=1, $codart=>1]);
-            }
-
-            if($codart == 'SM511718' || $codart == 'AV510718') {
-                $this->setBultoQuantity($bultos, $lin, "EROSKI-1", [$codart=>3, $codart=>3]);
-            }
-
-            if($codart == 'SM511718T' || $codart == 'AV510718T') {
-                $this->setBultoQuantity($bultos, $lin, "EROSKI-2", [$codart=>2, $codart=>2]);
-            }
-
-            if($codart == 'T960-688') {
-                $this->setBultoQuantity($bultos, $lin, "1 BOX DISPLAY C/PALLET", [$codart=>16]);
-            }
-
-            $product = ProductsEdiModel::where("codart", $codart)->where("codcli", self::$toybagsCod)->first();
 
 
-            $this->setBultoQuantity($bultos, $lin, $codart." (".$product->export_pack.")", [$codart=>$product->export_pack]);
-
-        }
-    }
-
-    private function setBultoQuantity(&$bultos, $lin, $id, $interQuantity = array()) {
-        if(!array_key_exists($id, $bultos) || $lin->cantidad < $bultos[$id]['export_quantity']) {
-            $bultos[$id]['export_quantity'] = $lin->cantidad;
-        }
-        $bultos[$id]['inter_quantity'] = $interQuantity;
-    }
-
-    private function getProducts($cliente, $cods, &$products) {
-        $queryCods = "";
-        $i=0;
-        foreach($cods as $cod) {
-            if($i > 0) {
-                $queryCods .=" OR ";
-            }
-            $queryCods .= "codart='$cod'";
-            $i++;
-        }
-
-        $query = "SELECT * FROM artic WHERE codcli=$cliente AND ($queryCods)";
-
-        $productsJson = Ctsql::ctsqlExport($query);
-        $products = json_decode($productsJson[0]);
-        if(!$products->success) {
-            return false;
-        }
-
-        $products = $products->data;
-        return true;
-    }
-
-    private function getAlbaran($ejercicio, $cliente, $numAlbaran, &$albaran) {
-
-        $query = "SELECT * FROM albaran where codemp='1' and coddel='1' and codcli='$cliente' and tipalb='S' and ejerci='$ejercicio' and numalb='$numAlbaran'";
 
 
-        $albaranJson = Ctsql::ctsqlExport($query);
-        $albaran = json_decode($albaranJson[0]);
-
-        if(!$albaran->success) {
-            return false;
-        }
-
-        if(count($albaran->data) > 0)
-            $albaran = $albaran->data[0];
-
-        else $albaran = null;
-
-        return true;
-    }
-
-    private function getLinAlbaran($ejercicio, $cliente, $numAlbaran, &$linAlbaran) {
-        $query = "SELECT * FROM linalbar where codemp='1' and coddel='1' and codcli='$cliente' and tipalb='S' and ejerci='$ejercicio' and numalb='$numAlbaran'";
-        $linAlbarJson = Ctsql::ctsqlExport($query);
-        $linAlbaran = json_decode($linAlbarJson[0]);
-
-        if(!$linAlbaran->success) {
-            return false;
-        }
-
-        $linAlbaran = $linAlbaran->data;
-
-
-        return true;
-    }
 
 
     public function getDasanciProducts($codcli) {
@@ -251,8 +138,114 @@ class AppController extends Controller
     }
 
 
-    public function getDasanciTest() {
+    public function getToybagsStock() {
+        $query = "SELECT * FROM artic WHERE codemp=1 AND codcli=176";
+        $data = Ctsql::ctsqlExport($query);
+        $data = json_decode($data[0]);
+        dd($data->data);
+    }
+    public function getAddToybagsStock() {
+        $query = "DELETE FROM artic WHERE codemp = 1 AND codcli=176";
+        Ctsql::ctsqlImport($query);
 
+        $dataToInsert = [
+[            "TL960-688", "8436021460271", "MOCHIL TROLLEY RUEDAS ENSAMBLAR CON LUZ"],
+[            "T960-688", "8436021460257", "MOCHIL TROLLEY RUEDAS ENSAMBLAR BOX DISP"],
+[            "T433-700", "8436021461353", "MOCHILA"],
+[            "T433-306", "8436021461360", "MOCHILA"],
+[            "T433-696", "8436021460455", "MOCHILA TUZKI"],
+[            "T424-015", "8436021460134", "MOCHILA SOY LUNA"],
+[            "T424-282", "8436021460523", "MOCHILA MINNIE"],
+[            "CR2000114", "5411217398548", "MOCHILA SPIDERMAN"],
+[            "CR2020114", "5411217398661", "MOCHILA AVENGERS "],
+[            "T100-024", "8436021461063", "PORTATODO FROZEN"],
+[            "T100-282", "8436021461346", "PORTATODO MINNIE"],
+[            "CR2000133", "5411217398562", "PORTATODO SPIDERMAN"],
+[            "CR2020133", "5411217398715", "PORTATODO AVENGERS"],
+[            "T960-015", "8436021460165", "MOCHIL TROLLEY RUEDAS ENSAMBLAR SOY LUNA"],
+[            "T960-024", "8436021461124", "MOCHIL TROLLEY RUEDAS ENSAMBLAR FROZEN"],
+[            "CR2000114T", "5411217623206", "MOCHILA CON TROLLEY SPIDERMAN"],
+[            "CR2020114T", "5411217623480", "MOCHILA CON TROLLEY AVENGERS"],
+[            "T960-282E", "8436021460547", "MOCHIL CARRO DESMONT GRAND RUEDAS MINNIE"],
+[            "T424-282", "8436021460523", "MOCHILA DAYPACK  MINNIE CON BOLSILLO."],
+[            "T100-024E", "8436021460424", "SURTID POTATOD (FROZEN, MINNIE Y MICKEY)"],
+[            "T424-678E", "8436021460493", "SURTIDO MOCHILA (CHICAGO & TREAD)"],
+[            "T960-696E", "8436021460462", "MOCHIL CARRO BOLSILL TUZKI (NEGRA Y ROSA"],
+[            "T960-678E", "8436021460509", "MOCHIL CARRO BOLSILLO (CHICAGO & TREAD)"],
+[            "T655-024E", "8436021460417", "SURTID MICKEY,MINNIE,FROZEN,FINDING DORY"],
+[            "T424-696E", "8436021461339", "MOCHIL DAYPACK BOLSILLO TUZKI NEGRA,ROSA"],
+[            "T328-024E", "8436021460400", "SURTID MOCHIL INFNT GUARDE MICKEY,MINNIE"],
+[            "T800-024E", "8436021460394", "MOCHIL INFANT TRLLY GUARDE MICKEY,MINNIE"],
+[            "SM511718", "5411217639153", "MOCHIL DAYPACK BOLSILLO SPIDERMAN ESCUDO"],
+[            "AV510718", "5411217639078", "MOCHILA DAYPACK  AVENGERS CON ESCUDO"],
+[            "SM511718T", "5411217623947", "MOCHILA TROLLEY SPIDERMAN CON CARETA"],
+[            "AV510718T", "5411217623978", "MOCHILA TROLLEY AVENGERS CON ESCUDO"],
+[            "PW464107", "5416233131513", "MOCHILA JR PAW PATROL"],
+[            "PW464026", "5416233131759", "TROLLEY PAW PATROL INFANTIL"],
+[            "T960-014L", "8436021460097", "MOCHILA TROLLEY CON LUZ FROZEN"],
+[            "T424-014", "8436021460066", "MOCHILA FROZEN"],
+[            "T323-014", "8436021461056", "MOCHILITA FROZEN"],
+[            "T607-014", "8436021461049", "BANDOLERA FROZEN"],
+[            "T632-014", "8436021460042", "SAQUITO FROZEN"],
+[            "T103-014", "8436021460073", " PORTATODO FROZEN"],
+[            "T157-014", "8436021460059", "TRIPLE PORTATODO FROZEN"],
+[            "T154-014", "8436021461315", "FUNDA PARA FLAUTA FROZEN"],
+[            "T810-008-CI", "8436021461322", "MOCHILIT TROLLEY  PORTATOD FINDING DORY"],
+[            "CR2020029SET", "5411217826102", "MARVEL AVENGER CARRO FIJO+PORTATOD REGAL"],
+            ["18705921", "5411217639153", "MOCHILA G.SURT SPIDERM/AVENG C/6"],
+            ["18705657", "5411217623947", "CARRO G.SURT SPIDERM/AVENG C/4"],
+            ["18705806", "8436021460523", "MOCHILA G. MINNIE C.BOLSILLO C/6"],
+            ["18705707", "8436021460547", "CARRO G MINNIE+ PORTATODO C/6"],
+            ["18705715", "8436021460394", "CARRO GUARDERIA SURT.DISNEY C/8"],
+            ["18705798", "8436021460400", "MOCHILA GUARDERIA SURT. DISNEY C/12"],
+            ["18705954", "8436021460417", "SAQUITO SURTIDO DISNEY C/24"],
+            ["18705814", "5416233131513", "MOCHILA INF PAW PATROL C/6"],
+            ["18705749", "5416233131759", "CARRO GUARDERIA PAW PATROL C/6"],
+            ["18705962", "8436021460424", "PORTATODO DISNEY C/12"],
+            ["18705939", "8436021461339", "MOCHILA G SURTIDA BOLS TUZKI C/6"],
+            ["18705756", "8436021460462", "CARRO G BOLSILLO TUZKI C/4"],
+            ["18705947", "8436021460493", "MOCHILA JUVENIL SURTIDA C/6"],
+            ["18705772", "8436021460509", "CARRO G JUVENIL SURTIDO C/4"],
+            ["964270", "8436021460257", "Surtido Mochilas CASUAL GRANDE C/16"],
+            ["964272", "8436021460271", "Surtido Mochilas  CASUAL RUEDA LUZ C/6"],
+            ["220351", "8436021460165", "SURTID TRLLEY LCENCIAS DISNEY MARVEL C/4"],
+            ["220352", "8436021460455", "SURTIDO MOCHILA JUVENIL GENERICA C/3"],
+            ["220350", "8436021460134", "SURTID MOCHILS LCENCIA DISNEY MARVEL C/4"],
+            ["220349", "8436021461063", "SURTIDO PORTATODO LICENCIAS C/12"],
+
+
+        ];
+
+        foreach($dataToInsert as $data) {
+            $query  = "INSERT INTO artic (codemp, codcli, codart, descri, kgsuni, facbas, basalm, precio, stkmin, baralm, caduci, tipzon, volume, codbar, ctlser, adecua, barcpe, basman, barman, basmen, barmen, basmsa, barmsa, envweb, fifoli, codkit, codcom)
+VALUES
+(1, 176, '{$data[0]}', '{$data[2]}', 1.000, 0.000, 'BUL', 0.00, 0.000, 'Z', 'N', '', 0.000, '{$data[1]}', 'N', '', '0', 'BUL', '0', 'BUL', '0', 'BUL', '0', 'N', '', '', 0)";
+            
+            $ctsql = Ctsql::ctsqlImport($query);
+            var_dump($ctsql);
+        }
+
+
+
+    }
+
+    public function getBackup() {
+
+        $limit = 0;
+        do {
+            $query = "SELECT * FROM artic LIMIT $limit, 1000";
+            $articBase = Ctsql::ctsqlExport($query);
+            $articBase = json_decode($articBase[0]);
+            foreach ($articBase->data as $articulo) {
+                $artic = new Artic();
+                foreach (get_object_vars($articulo) as $index => $value) {
+                    $artic->$index = $value;
+                }
+                $artic->save();
+            }
+            $limit += 1000;
+
+        } while (count($articBase->data) > 0);
     }
 
 
