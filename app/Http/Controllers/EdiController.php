@@ -13,7 +13,13 @@ use App\AlbaranEdiCajas;
 use App\AlbaranEdiLineas;
 use App\AlbaranEdiPalets;
 use App\Ctsql;
+use App\EdiCabped;
+use App\EdiClientes;
+use App\EdiLinped;
+use App\EdiLoclped;
 use App\ProductsEdiModel;
+use Carbon\Carbon;
+use Faker\Provider\File;
 
 class EdiController extends Controller
 {
@@ -26,6 +32,15 @@ class EdiController extends Controller
 
     public function getCheckNewOrders() {
         $files = \File::files("/ASPEDI/PRODUCCION/ENTRADA");
+        //$files = \File::files(storage_path("app/tmp"));
+        foreach($files as $file) {
+            if($this->isXml($file)) {
+                $pedido = $this->getOrderObject($file);
+                $this->savePedido($pedido);
+                $fileName = basename($file);
+                \File::move($file, "/ASPEDI/PRODUCCION/ENTRADA/COPIAS/".$fileName);
+            }
+        }
     }
 
     public function getFinishExportEdi() {
@@ -124,6 +139,11 @@ class EdiController extends Controller
 
 
         return $result;
+    }
+
+    private function isXml($file) {
+        $ext = pathinfo($file, PATHINFO_EXTENSION);
+        return $ext == "xml";
     }
 
     private function getNextSscc($codcli) {
@@ -300,6 +320,222 @@ class EdiController extends Controller
             $bultos[$id]['export_quantity'] = $lin->cantidad;
         }
         $bultos[$id]['inter_quantity'] = $interQuantity;
+    }
+
+    private function addAttributesToObject($objectXml, &$object) {
+        foreach($objectXml->attributes() as $index=>$value) {
+            $object->$index = $value;
+        }
+    }
+
+    /**
+     * @param $file
+     */
+    private function getOrderObject($file)
+    {
+        $xml = new \SimpleXMLElement(file_get_contents($file));
+        $cabecera = new \StdClass();
+
+        foreach ($xml->attributes() as $index => $value) {
+            $cabecera->$index = $value;
+        }
+
+        $obser = new \StdClass();
+        foreach($xml->OBSER as $obserXml) {
+            $this->addAttributesToObject($obserXml, $obser);
+        }
+
+
+
+        $cabecera->LINEAS = [];
+        foreach ($xml->LINEA as $lineaXml) {
+            $linea = new \StdClass();
+            $this->addAttributesToObject($lineaXml, $linea);
+            $linea->LOCS = [];
+            $linea->OBSERLS = [];
+
+            foreach ($lineaXml->LOC as $locXml) {
+                $loc = new \StdClass();
+                $this->addAttributesToObject($locXml, $loc);
+                $linea->LOCS[] = $loc;
+            }
+
+            foreach ($lineaXml->OBSERL as $obserXml) {
+                $obser = new \StdClass();
+                $this->addAttributesToObject($obserXml, $obser);
+                $linea->OBSERLS[] = $obser;
+            }
+
+            $cabecera->LINEAS[] = $linea;
+        }
+
+        return $cabecera;
+    }
+
+    private function savePedido($pedido) {
+
+        $cab = new EdiCabped();
+        foreach(get_object_vars($pedido) as $index=>$var) {
+            if(!is_array($var) && \Schema::hasColumn($cab->getTable(), $index)) {
+                $index = strtolower($index);
+                $cab->$index = $var;
+            }
+        }
+
+        $cab->save();
+
+
+        foreach($pedido->LINEAS as $linea) {
+            $lins = new EdiLinped();
+            foreach(get_object_vars($linea) as $index => $var) {
+                if (!is_array($var) && \Schema::hasColumn($lins->getTable(), $index)) {
+                    $index = strtolower($index);
+                    $lins->$index = $var;
+                }
+            }
+            $lins->cabped_id = $cab->id;
+            foreach($linea->LOCS as $loc) {
+                $locDb = new EdiLoclped();
+                foreach(get_object_vars($loc) as $index => $var) {
+                    if (!is_array($var) && \Schema::hasColumn($locDb->getTable(), $index)) {
+                        $index = strtolower($index);
+                        $locDb->$index = $var;
+                    }
+                }
+                $locDb->cabped_id = $cab->id;
+                $locDb->save();
+            }
+            $lins->save();
+        }
+
+        $this->savePedidoToMultibase($cab);
+    }
+
+    private function savePedidoToMultibase($cabped) {
+
+        $codcli = EdiClientes::where("ean", $cabped->vendedor)->first();
+        $codcli = $codcli->cod_interno;
+        $fechaPedido = Carbon::createFromFormat("YmdHi", $cabped->fecha);
+        $fechaEntrega = Carbon::createFromFormat("YmdHi", $cabped->fechaere);
+        $ejeped = $fechaPedido->year;
+        $refped = intval($cabped->numped);
+        $fecped = $fechaPedido->format("d/m/Y");
+        $fecent = $fechaEntrega->format("d/m/Y");
+        $comprador = EdiClientes::where("ean", $cabped->comprador)->first();
+        $nomtec = $comprador->nombre;
+        $nomfis = $comprador->nombre_fiscal;
+        $dirtec = $comprador->direccion;
+        $pobtec = $comprador->poblacion . " (".$comprador->provincia.")";
+        $cpotec = $comprador->cp;
+        $observ = $comprador->observaciones . " No. PEDIDO: ".$refped;
+        $pobdis = $pobtec;
+        $ctsql = "SELECT MAX(numped) as maxped FROM pedidos WHERE codcli=$codcli";
+        $maxPedido = Ctsql::ctsqlExport($ctsql);
+        $maxPedido = json_decode($maxPedido[0]);
+        if(count($maxPedido->data) < 1) {
+            $numped = 1;
+        }
+        else {
+            $numped = intval($maxPedido->data[0]->maxped) + 1;
+        }
+
+
+
+
+        $query = "INSERT INTO pedidos ("
+            ."codemp, coddel, codcli, tipped, serped, ejeped, numped,"
+            ."fecped, inddis, totbul, totkil, totvol,"
+            ."reembo, imptot, nomtec, dirtec, pobtec, cpotec,"
+            ."codtec, observ, transp, indser, reserv, fecent,"
+            ."estado, envweb, pobdis, cpodis, nomfis, refped,"
+            ."valora, apliva, tipiva, ejeope, numope, finope,"
+            ."txtven, okpick"
+            .") "
+            ."VALUES "
+            ."(1, 1, $codcli, 'S', '', $ejeped, $numped,"
+            ."'$fecped', '', 0, 0, 0,"
+            ."0, 0, '$nomtec', '$dirtec', '$pobtec', $cpotec,"
+            ."'', '$observ', '', 'N', 'N', '$fecent',"
+            ."'', '', '$pobdis', 0, '$nomfis', '$refped',"
+            ."'N', 'N', 0, 0, 0, '',"
+            ."'', ''"
+            .")";
+
+        Ctsql::ctsqlImport($query);
+        $this->saveLineasPedido($cabped, $codcli, $numped);
+
+    }
+
+    private function saveLineasPedido($cabped, $codcli, $numped) {
+
+        $fechaPedido = Carbon::createFromFormat("YmdHi", $cabped->fecha);
+        $ejeped = $fechaPedido->year;
+
+        $linsPed = EdiLinped::where("cabped_id", $cabped->id)->get();
+
+        foreach($linsPed as $linPed) {
+
+            $numlin = $linPed->clave2;
+            $sku = $linPed->refcli;
+            $cantid = $linPed->cantped;
+            $descri = $linPed->descmer;
+
+            $ctsql = "SELECT * FROM artic WHERE codcli=$codcli and codart='$sku'";
+            $result = Ctsql::ctsqlExport($ctsql);
+            $result = json_decode($result[0]);
+
+            if(count($result->data) < 1) {
+                $this->adviseNoArtic($sku, $descri, $cantid, $numped, $codcli);
+            }
+
+            else  {
+                $descri = $result->data[0]->descri;
+
+                $query = "INSERT INTO linpedidos ("
+                    . "codemp, coddel, codcli, tipped, serped, ejeped, numped, numlin,"
+                    . "codart, cantid, bultos, kilos, volume, precio, dtoli1,"
+                    . "dtoli2, descri, estado, tipdoc, tipiva, edilin, asocia,"
+                    . "nopick, lnpick, codkit)"
+                    . "VALUES"
+                    . "(1, 1, $codcli, 'S', '', $ejeped, $numped, $numlin,"
+                    . "'$sku', $cantid, 0, 0, 0, 0, 0,"
+                    . "0, '$descri', '', 'P', 0, 'S', 0,"
+                    . "0, 0, '')";
+
+                Ctsql::ctsqlImport($query);
+            }
+
+        }
+
+    }
+
+    private function existsArtic($codart, $codcli) {
+        $result = Ctsql::ctsqlExport("SELECT * FROM artic WHERE codart = $codart AND codcli= $codcli");
+        $data = json_decode($result[0]);
+        return count($data) > 0;
+    }
+
+    private function adviseNoArtic($codart, $descri, $cantid, $numped, $codcli) {
+
+        $data["codart"] = $codart;
+        $data["descri"] = $descri;
+        $data["cantid"] = $cantid;
+        $data["numped"] = $numped;
+        $data["codcli"] = $codcli;
+
+        \Mail::send("emails.orders.edi-no-artic", $data, function ($message) use ($data)  {
+            $message->from("noreply@logival.es", "Logival Avisos");
+            $message->to("admon@logival.es", "Yolanda");
+            $message->subject("Pedido EDI con artículo erróneo");
+        });
+    }
+
+    public function getTest() {
+        $query = "SELECT * FROM artic where codcli=176 and codart='18705954'";
+        $result = Ctsql::ctsqlExport($query);
+        $result = json_decode($result[0]);
+        dd($result);
+
     }
 
 }

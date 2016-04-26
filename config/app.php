@@ -150,6 +150,7 @@ return [
         Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class,
         Chumper\Zipper\ZipperServiceProvider::class,
         Anchu\Ftp\FtpServiceProvider::class,
+        Orchestra\Parser\XmlServiceProvider::class,
         /*
          * Application Service Providers...
          */
@@ -209,6 +210,7 @@ return [
         'DNS1D' => Milon\Barcode\Facades\DNS1DFacade::class,
         'DNS2D' => Milon\Barcode\Facades\DNS2DFacade::class,
         'PDF' => Barryvdh\Snappy\Facades\SnappyPdf::class,
+        'XmlParser' => Orchestra\Parser\Xml\Facade::class
 
 
     ],
