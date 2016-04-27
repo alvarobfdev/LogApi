@@ -531,11 +531,15 @@ class EdiController extends Controller
     }
 
     public function getTest() {
-        $query = "SELECT * FROM artic where codcli=176 and codart='18705954'";
-        $result = Ctsql::ctsqlExport($query);
-        $result = json_decode($result[0]);
-        dd($result);
 
+        $files = \File::files("/ASPEDI/PRODUCCION/ENTRADA");
+        //$files = \File::files(storage_path("app/tmp"));
+        foreach($files as $file) {
+            if($this->isXml($file)) {
+                $fileName = basename($file);
+                \File::move($file, "/ASPEDI/PRODUCCION/ENTRADA/COPIAS/".$fileName);
+            }
+        }
     }
 
 }
