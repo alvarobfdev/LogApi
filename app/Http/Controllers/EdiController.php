@@ -537,7 +537,8 @@ class EdiController extends Controller
         foreach($files as $file) {
             if($this->isXml($file)) {
                 $fileName = basename($file);
-                \File::move($file, "/ASPEDI/PRODUCCION/ENTRADA/COPIAS/".$fileName);
+                //\File::move($file, "/ASPEDI/PRODUCCION/ENTRADA/COPIAS/".$fileName);
+                file_put_contents("/ASPEDI/PRODUCCION/ENTRADA/COPIAS/".$fileName, file_get_contents($file));
             }
         }
     }
