@@ -539,6 +539,7 @@ class EdiController extends Controller
                 $fileName = basename($file);
                 //\File::move($file, "/ASPEDI/PRODUCCION/ENTRADA/COPIAS/".$fileName);
                 file_put_contents("/ASPEDI/PRODUCCION/ENTRADA/COPIAS/".$fileName, file_get_contents($file));
+                unlink($file);
             }
         }
     }
