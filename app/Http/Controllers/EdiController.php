@@ -532,16 +532,7 @@ class EdiController extends Controller
 
     public function getTest() {
 
-        $files = \File::files("/ASPEDI/PRODUCCION/ENTRADA");
-        //$files = \File::files(storage_path("app/tmp"));
-        foreach($files as $file) {
-            if($this->isXml($file)) {
-                $fileName = basename($file);
-                //\File::move($file, "/ASPEDI/PRODUCCION/ENTRADA/COPIAS/".$fileName);
-                file_put_contents("/ASPEDI/PRODUCCION/ENTRADA/COPIAS/".$fileName, file_get_contents($file));
-                unlink($file);
-            }
-        }
+
     }
 
 }
