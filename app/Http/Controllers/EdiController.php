@@ -33,6 +33,7 @@ class EdiController extends Controller
     public function getCheckNewOrders() {
         $files = \File::files("/ASPEDI/PRODUCCION/ENTRADA");
         //$files = \File::files(storage_path("app/tmp"));
+        dd($files);
         foreach($files as $file) {
             if($this->isXml($file)) {
                 $pedido = $this->getOrderObject($file);
