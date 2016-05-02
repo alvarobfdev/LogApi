@@ -296,8 +296,7 @@ class EdiController extends Controller
         $formatted = $dom->saveXML();
         $datetime = Carbon::create()->format("Ymdhis");
         file_put_contents("/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml", $formatted);
-        exec("sh /ASPEDI/enviar_a_ediwin_asp.sh", $output);
-        dd($output);
+        exec("cd /ASPEDI && ./enviar_a_ediwin_asp.sh", $output);
 
     }
 
