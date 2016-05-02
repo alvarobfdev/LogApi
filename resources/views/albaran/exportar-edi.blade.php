@@ -309,8 +309,11 @@
                 'tiendasList':JSON.stringify(tiendasList),
                 'lineas':JSON.stringify(lin_albaran)
             }, function() {
-
-            });
+                alert("Fichero exportado con éxito!");
+                window.location.reload();
+            }).error(function() {
+                alert("Fallo al exportar fichero. Consulte a un técnico");
+            })
         }
 
 

@@ -248,6 +248,12 @@ VALUES
         } while (count($articBase->data) > 0);
     }
 
+    public function getBombasToZero() {
+        $query = "UPDATE artic set kgsuni=0 WHERE codcli=60 or codcli=90 or codcli=50";
+        //$result = Ctsql::ctsqlImport($query);
+
+    }
+
 
 
 }
