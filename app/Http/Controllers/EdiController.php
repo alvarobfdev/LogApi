@@ -184,6 +184,7 @@ class EdiController extends Controller
         $albaranEdi->save();
 
         $this->createEdiXml($albaranEdi, $paletsArr, $cajas, $lineasArr, $localizaciones);
+        return json_encode(["result"=>"success"]);
 
     }
 
@@ -295,8 +296,7 @@ class EdiController extends Controller
         $formatted = $dom->saveXML();
         $datetime = Carbon::create()->format("Ymdhis");
         file_put_contents("/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml", $formatted);
-        exec("sh enviar_a_ediwin_asp.sh");
-        return json_encode(["success"=>true]);
+        dd(exec("sh /ASPEDI/enviar_a_ediwin_asp.sh"));
 
     }
 
