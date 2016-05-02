@@ -313,7 +313,7 @@
                 window.location.reload();
             }).error(function() {
                 alert("Fallo al exportar fichero. Consulte a un técnico");
-            })
+            });
         }
 
 
