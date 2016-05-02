@@ -65,7 +65,7 @@ class EdiController extends Controller
 
 
         $albaranEdi = new AlbaranEdi();
-        $albaranEdi->num_expedicion = $albaran->ejerci.$albaran->numalb;
+        $albaranEdi->num_expedicion = $albaran->ejerci.$albaran->codcli.$albaran->numalb;
 
         $pedidoEdi = $this->getPedidoEdi($albaran->ejeped, $albaran->codcli, $albaran->numped);
 
