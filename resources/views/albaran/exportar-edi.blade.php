@@ -14,7 +14,7 @@
             <div class="form-group">
                 <label class="col-md-4 control-label" for="ejercicio">Ejercicio</label>
                 <div class="col-md-4">
-                    <input id="ejercicio" name="ejercicio" value="2015" type="text" placeholder="Inserte ejercicio" class="form-control input-md" required="">
+                    <input id="ejercicio" name="ejercicio" value="2016" type="text" placeholder="Inserte ejercicio" class="form-control input-md" required="">
 
                 </div>
             </div>
@@ -23,7 +23,7 @@
             <div class="form-group">
                 <label class="col-md-4 control-label" for="numCliente">Núm. Cliente</label>
                 <div class="col-md-4">
-                    <input id="numCliente" name="numCliente" type="text" placeholder="Inserte número cliente" class="form-control input-md" required="" value="111">
+                    <input id="numCliente" name="numCliente" type="text" placeholder="Inserte número cliente" class="form-control input-md" required="" value="176">
 
                 </div>
             </div>
@@ -32,8 +32,16 @@
             <div class="form-group">
                 <label class="col-md-4 control-label" for="numAlbaran">Núm. Albaran</label>
                 <div class="col-md-4">
-                    <input id="numAlbaran" name="numAlbaran" type="text" placeholder="Inserte número albarán" class="form-control input-md" required="" value="1036">
+                    <input id="numAlbaran" name="numAlbaran" type="text" placeholder="Inserte número albarán" class="form-control input-md" required="" value="1">
 
+                </div>
+            </div>
+
+            <!-- Text input-->
+            <div class="form-group">
+                <label class="col-md-4 control-label" for="numCamiones">Nº de camiones</label>
+                <div class="col-md-4">
+                    <input id="numCamiones" name="numCamiones" type="text" placeholder="Inserte cantidad de camiones" class="form-control input-md" required="" value="1">
                 </div>
             </div>
 
@@ -138,9 +146,22 @@
                 var numBultos = Number($(this).prev('input').val());
                 var numPalet = Number($(this).attr('data-palet'));
                 selectedLinea = Number($(this).attr('data-linea'));
-                palets[numPalet - 1][selectedLinea] = numBultos;
-                var bultosRestantes = lin_albaran[selectedLinea].bultos - numBultos;
+                var selectedTienda = "";
+                var bultosRestantes = lin_albaran[selectedLinea].bultos;
+                if(tiendas) {
+                    selectedTienda = Number($(this).attr('data-tienda'));
+                    palets[numPalet - 1][selectedLinea][selectedTienda] = numBultos;
+                    for(var i = 0; i<palets[numPalet - 1][selectedLinea].length; i++) {
+                        bultosRestantes -= palets[numPalet - 1][selectedLinea][i];
+                    }
+                }
+                else  {
+                    palets[numPalet - 1][selectedLinea] = numBultos;
+                    bultosRestantes -= numBultos;
+                }
+
                 lin_albaran[selectedLinea].bultosRestantes = bultosRestantes;
+
                 if(bultosRestantes > 0)
                     manejarLinea(selectedLinea);
                 else manejarLinea(selectedLinea+1);
@@ -196,6 +217,10 @@
                 products = json.data.products;
                 tiendasList = json.data.tiendasList;
 
+                if(tiendasList.length == 0) {
+                    tiendas = false;
+                }
+
                 buildFormPalet(form);
 
                 formType = 'addToPalet';
@@ -220,12 +245,13 @@
         function construirPalets() {
             palets = new Array(albaran.totpal);
 
-            for(var iTienda=0; iTienda < tiendasList.length; iTienda++) {
-                $('#numTienda').append($('<option>', {
-                    value: iTienda,
-                    text: 'Tienda - ' + tiendasList[iTienda].numTienda
-                }));
-            }
+            if(tiendas)
+                for(var iTienda=0; iTienda < tiendasList.length; iTienda++) {
+                    $('#numTienda').append($('<option>', {
+                        value: iTienda,
+                        text: tiendasList[iTienda].cod_interno + " - "+ tiendasList[iTienda].nombre
+                    }));
+                }
 
             for(var i=0; i<albaran.totpal; i++) {
                 $('#numPalet').append($('<option>', {
@@ -251,7 +277,6 @@
 
         function manejarLinea(numLinea) {
 
-            console.log(numLinea);
             if(numLinea < lin_albaran.length) {
                 selectedLinea = numLinea;
                 var linea = lin_albaran[numLinea];
@@ -280,7 +305,9 @@
             $.getJSON('{{url('app/edi/finish-export-edi')}}', {
                 'albaran': JSON.stringify(albaran),
                 'palets':JSON.stringify(palets),
-                'tipoPalets':JSON.stringify(tipoPalets)
+                'tipoPalets':JSON.stringify(tipoPalets),
+                'tiendasList':JSON.stringify(tiendasList),
+                'lineas':JSON.stringify(lin_albaran)
             }, function() {
 
             });
@@ -346,10 +373,13 @@
                         var htmlTiendas = "";
                         var addBulto = false;
                         $.each(value, function(iTienda, bultos) {
+
+                            var cod_interno = tiendasList[iTienda].cod_interno;
+
                             if(bultos > 0) {
                                 htmlTiendas += '<div class="tienda">\
-                                        <span>' + numTienda + '  x </span><input type="number" min="0" max="' + bultos + '" value="' + bultos + '">\
-                                         <button data-tienda="' + numTienda + '" data-palet="' + (i + 1) + '" data-linea="' + numLinea + '" class="btn btn-primary modificarCantidad">Modificar</button></div>';
+                                        <span>' + cod_interno + '  x </span><input type="number" min="0" max="' + bultos + '" value="' + bultos + '">\
+                                         <button data-tienda="' + iTienda + '" data-palet="' + (i + 1) + '" data-linea="' + numLinea + '" class="btn btn-primary modificarCantidad">Modificar</button></div>';
                                 addBulto = true;
                             }
                         });
