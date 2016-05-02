@@ -131,7 +131,7 @@
         var tiendas = true;
 
         $(function() {
-            startAlbaran($('form'));
+            //startAlbaran($('form'));
 
             $('body').on('click', '.modificarCantidad', function(e) {
                 e.preventDefault();
