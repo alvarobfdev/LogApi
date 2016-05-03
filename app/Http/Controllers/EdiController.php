@@ -28,6 +28,8 @@ class EdiController extends Controller
 
     public static $toybagsCod = 176;
 
+    public static $sscc = null;
+
     public function getExportarEdi() {
         return view("albaran.exportar-edi");
     }
@@ -81,6 +83,7 @@ class EdiController extends Controller
         $albaranEdi->fecha_entrega = Carbon::parse($pedido->fecent)->format("YmdHi");
         $albaranEdi->num_albaran = $albaran->numalb;
         $albaranEdi->num_pedido = $albaran->numped;
+        $albaranEdi->pedido_ref = $pedidoEdi->numped;
         $albaranEdi->origen = "8473098842005";
         $albaranEdi->destino = $pedidoEdi->comprador;
         $albaranEdi->proveedor = $pedidoEdi->vendedor;
@@ -106,8 +109,10 @@ class EdiController extends Controller
             $albaranEdiPalets->numalb = $albaran->numalb;
             $albaranEdiPalets->idpalet = $i+1;
             $albaranEdiPalets->tipoEmb = $tipoPalets[$i];
+            $albaranEdiPalets->sscc = $this->getNextSscc($albaran->codcli);
             $albaranEdiPalets->save();
             $paletsArr[] = $albaranEdiPalets;
+
 
             for($j=0; $j<count($palets[$i]); $j++) {
                 if(is_array($palets[$i][$j]))
@@ -124,7 +129,7 @@ class EdiController extends Controller
                     $albaranEdiCajas->numalb = $albaran->numalb;
                     $albaranEdiCajas->idpalet = $i + 1;
                     $albaranEdiCajas->idcaja = $j + 1;
-                    $albaranEdiCajas->sscc = $this->getNextSscc($albaran->codcli);
+                    $albaranEdiCajas->sscc = $this->getNextSscc($albaran->codcli, $numBultos);
                     $albaranEdiCajas->cantidad = $numBultos;
                     $albaranEdiCajas->save();
                     $cajas[] = $albaranEdiCajas;
@@ -196,11 +201,12 @@ class EdiController extends Controller
         $cab->addAttribute("FECENT", $albaranEdi->fecha_entrega);
         $cab->addAttribute("FECDES", $albaranEdi->fecha_expedicion);
         $cab->addAttribute("NUMALB", $albaranEdi->num_albaran);
-        $cab->addAttribute("NUMPED", $albaranEdi->num_pedido);
+        $cab->addAttribute("NUMPED", $albaranEdi->pedido_ref);
         $cab->addAttribute("ORIGEN", $albaranEdi->origen);
         $cab->addAttribute("DESTINO", $albaranEdi->destino);
         $cab->addAttribute("PROVEEDOR", $albaranEdi->proveedor);
         $cab->addAttribute("COMPRADOR", $albaranEdi->comprador);
+        $cab->addAttribute("RECEPTOR", $albaranEdi->comprador);
         $cab->addAttribute("DPTO", $albaranEdi->departamento);
         $cab->addAttribute("TOTQTY", $albaranEdi->totqty);
         $cab->addAttribute("IDENTIF", $albaranEdi->identif);
@@ -232,57 +238,60 @@ class EdiController extends Controller
                     $cantemb += $caja->cantidad;
                 }
             }
+            $numCajas = floatval(count($albaranEdiCajas));
             $embPalet->addAttribute("CANTEMB", number_format($cantemb, 3, '.', ''));
-            $embPalet->addAttribute("TIPEMB", $palet->tipoEmb);
+            $embPalet->addAttribute("TIPEMB", "CT");
             $embPalet->addAttribute("SSCC1", $palet->sscc);
             $embPalet->addAttribute("TCAJAS", $cantemb);
             $embPalet->addAttribute("TIPO2", "CT");
 
             foreach($albaranEdiCajas as $caja) {
                 for($i=0; $i<$caja->cantidad;$i++) {
-                    $cps++;
-                    $embCaja = $cab->addChild("EMB", "");
-                    $embCaja->addAttribute("IDCAB", 1);
-                    $embCaja->addAttribute("IDEMB", $cps);
-                    $embCaja->addAttribute("CPS", $cps);
-                    $embCaja->addAttribute("CPSPADRE", $cpsPalet);
-                    $embCaja->addAttribute("CANTEMB", number_format(1.0, 3, '.', ''));
-                    $embCaja->addAttribute("TIPEMB", "CT");
-                    $sscc = intval(substr_replace($caja->sscc, '', -1));
-                    $sscc+=$i;
-                    $sscc .= $this->getSsccDigitControl($sscc);
-                    $embCaja->addAttribute("SSCC1", $sscc);
+                    if($caja->idpalet == $palet->idpalet) {
+                        $cps++;
+                        $embCaja = $cab->addChild("EMB", "");
+                        $embCaja->addAttribute("IDCAB", 1);
+                        $embCaja->addAttribute("IDEMB", $cps);
+                        $embCaja->addAttribute("CPS", $cps);
+                        $embCaja->addAttribute("CPSPADRE", $cpsPalet);
+                        $embCaja->addAttribute("CANTEMB", number_format(1.0, 3, '.', ''));
+                        $embCaja->addAttribute("TIPEMB", "CT");
+                        $sscc = intval(substr_replace($caja->sscc, '', -1));
+                        $sscc += $i;
+                        $sscc .= $this->getSsccDigitControl($sscc);
+                        $embCaja->addAttribute("SSCC1", $sscc);
 
 
-                    foreach($albaranEdiLin as $linea) {
-                        if($linea->idcaja == $caja->idcaja && $linea->idpalet == $palet->idpalet) {
-                            $idlin++;
-                            $lin = $embCaja->addChild("LIN", "");
-                            $lin->addAttribute("IDCAB", 1);
-                            $lin->addAttribute("IDEMB", $cps);
-                            $udsLinea = $linea->cantidad_total/$caja->cantidad;
-                            $lin->addAttribute("CENVFAC", number_format($udsLinea, 3, '.', ''));
-                            $lin->addAttribute("CUEXP", number_format($udsLinea, 3, '.', ''));
-                            $lin->addAttribute("DESCRIP", $linea->descripcion);
-                            $lin->addAttribute("EAN", $linea->ean);
-                            $lin->addAttribute("IDLIN", $idlin);
-                            $lin->addAttribute("TIPART", "CU");
+                        foreach ($albaranEdiLin as $linea) {
+                            if ($linea->idcaja == $caja->idcaja && $linea->idpalet == $palet->idpalet) {
+                                $idlin++;
+                                $lin = $embCaja->addChild("LIN", "");
+                                $lin->addAttribute("IDCAB", 1);
+                                $lin->addAttribute("IDEMB", $cps);
+                                $udsLinea = $linea->cantidad_total / $caja->cantidad;
+                                $lin->addAttribute("CENVFAC", number_format($udsLinea, 3, '.', ''));
+                                $lin->addAttribute("CUEXP", number_format($udsLinea, 3, '.', ''));
+                                $lin->addAttribute("DESCRIP", $linea->descripcion);
+                                $lin->addAttribute("EAN", $linea->ean);
+                                $lin->addAttribute("IDLIN", $idlin);
+                                $lin->addAttribute("TIPART", "CU");
 
-                            foreach($albaranEdiLoc as $index => $localizacion) {
+                                foreach ($albaranEdiLoc as $index => $localizacion) {
 
-                                if($localizacion->numlin == $linea->numlin && $localizacion->idcaja == $caja->idcaja && $localizacion->idpalet == $palet->idpalet) {
-                                    $idloc++;
-                                    $loc = $lin->addChild("LOC", "");
-                                    $loc->addAttribute("IDCAB", 1);
-                                    $loc->addAttribute("IDEMB", $cps);
-                                    $loc->addAttribute("IDLIN", $idlin);
-                                    $loc->addAttribute("IDLOC", $idloc);
-                                    $loc->addAttribute("LUGAR", $localizacion->lugar);
-                                    $loc->addAttribute("CANTIDAD", number_format($udsLinea, 3, '.', ''));
-                                    $localizacion->cantidad -= $udsLinea;
-                                    if(!$localizacion->cantidad)
-                                        unset($albaranEdiLoc[$index]);
-                                    break;
+                                    if ($localizacion->numlin == $linea->numlin && $localizacion->idcaja == $caja->idcaja && $localizacion->idpalet == $palet->idpalet) {
+                                        $idloc++;
+                                        $loc = $lin->addChild("LOC", "");
+                                        $loc->addAttribute("IDCAB", 1);
+                                        $loc->addAttribute("IDEMB", $cps);
+                                        $loc->addAttribute("IDLIN", $idlin);
+                                        $loc->addAttribute("IDLOC", $idloc);
+                                        $loc->addAttribute("LUGAR", $localizacion->lugar);
+                                        $loc->addAttribute("CANTIDAD", number_format($udsLinea, 3, '.', ''));
+                                        $localizacion->cantidad -= $udsLinea;
+                                        if (!$localizacion->cantidad)
+                                            unset($albaranEdiLoc[$index]);
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -296,6 +305,7 @@ class EdiController extends Controller
         $formatted = $dom->saveXML();
         $datetime = Carbon::create()->format("Ymdhis");
         file_put_contents("/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml", $formatted);
+        //file_put_contents(storage_path("app/tmp/").$datetime.".xml", $formatted);
         exec("cd /ASPEDI && ./enviar_a_ediwin_asp.sh", $output);
     }
 
@@ -405,39 +415,41 @@ class EdiController extends Controller
         return ($ext == "xml" || $ext == "XML");
     }
 
-    private function getNextSscc($codcli) {
-        $sscc = \DB::table("albaran_edi_cajas")->select(\DB::raw("MAX(SUBSTRING(sscc, 1, CHAR_LENGTH(sscc) - 1)) AS sscc_no_digit"))->where("codcli", $codcli)->first();
+    private function getNextSscc($codcli, $cant = 1) {
 
-        $sscc = $sscc->sscc_no_digit;
-        if(!$sscc)
-            $sscc = $this->getFirstSscc($codcli);
+        if(!self::$sscc) {
+            $ssccCaja = \DB::table("albaran_edi_cajas")->select(\DB::raw("MAX(SUBSTRING(sscc, 1, CHAR_LENGTH(sscc) - 1)) AS sscc_no_digit"))->select("cantidad")->where("codcli", $codcli)->first();
 
+            if($ssccCaja) {
+                $nextSccc = $ssccCaja->sscc_no_digit + $ssccCaja->cantidad;
+            }
+
+            else $nextSccc = $this->getFirstSscc($codcli);
+
+            self::$sscc = $nextSccc;
+        }
         else {
-            $sscc++;
-            $sscc.=$this->getSsccDigitControl($sscc);
+            $nextSccc = self::$sscc+1;
+            self::$sscc += $cant;
+
         }
 
+        $sscc = $nextSccc.$this->getSsccDigitControl($nextSccc);
         return $sscc;
 
     }
 
     private function getFirstSscc($codcli) {
-        $query = "SELECT * FROM clientes WHERE codemp = 1 AND codcli = $codcli";
-        $cliente = Ctsql::ctsqlExport($query);
 
-        $cliente = json_decode($cliente[0]);
-        $cliente = $cliente->data[0];
-        //$gcp = $cliente->codpro;
-        $gcp = "843602146";
-        $gcpNoPrefix = substr($gcp, 2);
-        $countGcp = strlen($gcpNoPrefix);
-        $totalToFill = 14-$countGcp;
+        $cliente = EdiClientes::where("cod_interno", $codcli)->where("cliente_logival", 1)->first();
+        $gcp = $cliente->gcp;
+        $countGcp = strlen($gcp);
+        $totalToFill = 16-$countGcp;
         $sscc = "3".$gcp;
         for($i=0; $i<$totalToFill-1; $i++) {
             $sscc.="0";
         }
         $sscc.="1";
-        $sscc.=$this->getSsccDigitControl($sscc);
         return $sscc;
     }
 
@@ -462,7 +474,6 @@ class EdiController extends Controller
             $controlDigit++;
             $acum++;
         }
-
         return $controlDigit;
     }
 

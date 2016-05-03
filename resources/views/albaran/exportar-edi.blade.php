@@ -300,6 +300,7 @@
         }
 
         function finalizarEdi() {
+
             $("button").prop("disabled", true);
             $("#addToPalet").text("Exportando...");
             $.getJSON('{{url('app/edi/finish-export-edi')}}', {
