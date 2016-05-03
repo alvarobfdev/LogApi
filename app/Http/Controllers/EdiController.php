@@ -68,7 +68,7 @@ class EdiController extends Controller
 
         $albaranEdi = new AlbaranEdi();
         $albaranEdi->num_expedicion = $albaran->ejerci.$albaran->codcli.$albaran->numalb;
-
+        dd($albaran->numped);
         $pedidoEdi = $this->getPedidoEdi($albaran->ejeped, $albaran->codcli, $albaran->numped);
 
         if($pedidoEdi->nodo == "YB1") {
@@ -393,8 +393,6 @@ class EdiController extends Controller
 
     private function getPedido($ejercicio, $cliente, $numPedido, &$pedido) {
         $query = "SELECT * FROM pedidos where codemp='1' and coddel='1' and codcli='$cliente' and tipped='S' and ejeped='$ejercicio' and numped='$numPedido'";
-
-
         $pedidoJson = Ctsql::ctsqlExport($query);
         $pedido = json_decode($pedidoJson[0]);
 
