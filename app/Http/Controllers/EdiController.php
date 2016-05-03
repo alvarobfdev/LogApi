@@ -68,7 +68,6 @@ class EdiController extends Controller
 
         $albaranEdi = new AlbaranEdi();
         $albaranEdi->num_expedicion = $albaran->ejerci.$albaran->codcli.$albaran->numalb;
-        dd($albaran->numped);
         $pedidoEdi = $this->getPedidoEdi($albaran->ejeped, $albaran->codcli, $albaran->numped);
 
         if($pedidoEdi->nodo == "YB1") {
