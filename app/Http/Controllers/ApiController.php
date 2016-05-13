@@ -171,7 +171,7 @@ class ApiController extends Controller
 
         try {
             \Mail::send("emails.invoice", $data, function ($message) use ($zipPath, $cliente, $email, $data) {
-                $message->from("logival@logival.es", "Aviso de factura");
+                $message->from("admon@logival.es", "Aviso de factura");
                 $message->to($email, $cliente->nomcli);
                 $message->subject("Emisión de facturas");
                 $message->attach($zipPath);
