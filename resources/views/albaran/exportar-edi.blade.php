@@ -100,6 +100,13 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label class="col-md-6 control-label">Bultos x Capa:</label>
+                <div class="col-md-6">
+                    <input type="number" id="bultosCapa" min="1" class="form-control input-md">
+                </div>
+            </div>
+
 
 
             <!-- Button -->
@@ -126,9 +133,11 @@
         var maxBultos = 0;
         var selectedLinea = 0;
         var palets = [];
+        var bultosCapas = [];
         var tipoPalets = [];
         var tiendasList = []
         var tiendas = true;
+        var modify = false;
 
         $(function() {
             //startAlbaran($('form'));
@@ -206,6 +215,37 @@
                     return;
                 }
 
+                if(json.modify) {
+                    albaran = json.data.albaran;
+                    lin_albaran = json.data.lin_albaran;
+                    products = json.data.products;
+                    maxBultos = 0;
+                    selectedLinea = 0;
+                    tipoPalets = json.data.tipoPalets;
+                    tiendasList = json.data.tiendasList;
+
+                    if(tiendasList.length == 0) {
+                        tiendas = false;
+                    }
+
+                    modify = true;
+
+                    construirPalets();
+                    palets = json.data.palets;
+                    bultosCapas = json.data.bultosCapas;
+
+
+
+
+                    $('#capaBusquedaAlbaran').hide();
+                    $('#capaMontarPalets').show();
+                    $('#capaVisorPalets').show();
+
+                    manejarLinea(0);
+                    reloadVisorPalets();
+                    return;
+                }
+
                 if(json.data.albaran.totpal < 1) {
                     alert("No se han asignado palets a este albarán!");
                     resetButton();
@@ -244,6 +284,8 @@
 
         function construirPalets() {
             palets = new Array(albaran.totpal);
+            bultosCapas = new Array(albaran.totpal);
+
 
             if(tiendas)
                 for(var iTienda=0; iTienda < tiendasList.length; iTienda++) {
@@ -260,9 +302,11 @@
                 }));
 
                 palets[i] = new Array(lin_albaran.length);
+                bultosCapas[i] = new Array(lin_albaran.length);
                 tipoPalets[i] = 201;
                 for(var j=0; j<lin_albaran.length; j++) {
-                    lin_albaran[j].bultosRestantes = lin_albaran[j].bultos;
+                    if(!modify)
+                        lin_albaran[j].bultosRestantes = lin_albaran[j].bultos;
                     if(!tiendas)
                         palets[i][j] = 0;
                     else {
@@ -271,6 +315,7 @@
                             palets[i][j][iTienda] = 0;
                         }
                     }
+                    bultosCapas[i][j] = 0;
                 }
             }
         }
@@ -308,7 +353,10 @@
                 'palets':JSON.stringify(palets),
                 'tipoPalets':JSON.stringify(tipoPalets),
                 'tiendasList':JSON.stringify(tiendasList),
-                'lineas':JSON.stringify(lin_albaran)
+                'lineas':JSON.stringify(lin_albaran),
+                'bultosCapas':JSON.stringify(bultosCapas),
+                'modify':modify
+
             }, function() {
                 alert("Fichero exportado con éxito!");
                 window.location.reload();
@@ -325,8 +373,11 @@
             numBultos = $('#numBultos').val();
             tipoPalet = $('#tipoPalet').val();
             numTienda = $('#numTienda').val();
+            bultosXcapa = $('#bultosCapa').val();
 
             tipoPalets[numPalet-1] = tipoPalet;
+
+            bultosCapas[numPalet - 1][selectedLinea] = bultosXcapa;
 
             if($.isNumeric(numBultos) && numBultos <= maxBultos) {
                 if(!tiendas) {
@@ -360,16 +411,29 @@
             for(var i=0; i<palets.length; i++) {
                 var html = '<div class="palet"><span><strong>Palet '+(i+1)+'</strong></span>';
                 $.each(palets[i], function(index, value) {
+                    var numBultosCapa = bultosCapas[i][index];
 
                     var numLinea = index;
                     var linea = lin_albaran[numLinea];
+
+                    var htmlBultosCapa = '<div class="bultoCapa">\
+                                    <span>Bultos/capa  x </span><input type="number" min="0" max="' + numBultosCapa + '" value="' + numBultosCapa + '">\
+                                     <button data-palet="' + (i + 1) + '" data-linea="' + numLinea + '" class="btn btn-primary modificarBultosCapa">Modificar</button></div>';
+
+
+
                     if(!tiendas) {
 
                         if (value > 0) {
 
                             html += '<div class="bulto">\
                                     <span>' + linea.codart + ' | ' + linea.descri + '  x </span><input type="number" min="0" max="' + value + '" value="' + value + '">\
-                                     <button data-palet="' + (i + 1) + '" data-linea="' + numLinea + '" class="btn btn-primary modificarCantidad">Modificar</button></div>';
+                                     <button data-palet="' + (i + 1) + '" data-linea="' + numLinea + '" class="btn btn-primary modificarCantidad">Modificar</button>';
+
+                            html += htmlBultosCapa;
+
+
+                            html += '</div>';
                         }
                     }
                     else {
@@ -390,7 +454,11 @@
 
                         if(addBulto) {
                             html += '<div class="bulto"><span>' + linea.codart + ' | ' + linea.descri + '</span>';
+
+
+                            html += htmlBultosCapa;
                             html += htmlTiendas;
+
                             html += '</div>';
                         }
                     }

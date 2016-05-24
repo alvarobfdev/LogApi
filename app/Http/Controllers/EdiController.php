@@ -14,6 +14,8 @@ use App\AlbaranEdiCajas;
 use App\AlbaranEdiLineas;
 use App\AlbaranEdiLocalizaciones;
 use App\AlbaranEdiPalets;
+use App\AlbaranFisicoEdi;
+use App\AlbaranLineasFisicoEdi;
 use App\Ctsql;
 use App\EdiCabped;
 use App\EdiClientes;
@@ -30,13 +32,38 @@ class EdiController extends Controller
 
     public static $sscc = null;
 
+    private $productsNotFound = [];
+
+    public function getAlbaranPdf($numcli, $numalb, $html = null) {
+
+
+        $data["albaran"] = AlbaranFisicoEdi::where("codcli", $numcli)->where("num_albaran", $numalb)->first();
+        $data["lineas"] = AlbaranLineasFisicoEdi::where("codcli", $numcli)->where("num_albaran", $numalb)->get();
+
+
+        $view = view("albaran.albaran-pdf", $data);
+        if($html) {
+            return $view;
+        }
+        else return \PDF::loadHTML($view)
+            ->setPaper('a4', 'landscape')
+            ->setOption('margin-right', 0)
+            ->setOption('margin-bottom', 0)
+            ->setOption('margin-left', 0)
+            ->setOption('margin-top', 0)
+            ->stream();
+
+
+
+    }
+
     public function getExportarEdi() {
         return view("albaran.exportar-edi");
     }
 
     public function getCheckNewOrders() {
-        $files = \File::files("/ASPEDI/PRODUCCION/ENTRADA");
-        //$files = \File::files(storage_path("app/tmp"));
+        //$files = \File::files("/ASPEDI/PRODUCCION/ENTRADA");
+        $files = \File::files(storage_path("app/tmp"));
         foreach($files as $file) {
             if($this->isXml($file)) {
                 $pedido = $this->getOrderObject($file);
@@ -47,26 +74,52 @@ class EdiController extends Controller
         }
     }
 
+    public function removeAlbaranEdi($codcli, $ejerci, $numalb) {
+        AlbaranEdi::where("codcli", $codcli)->where("ejerci", $ejerci)->where("numalb", $numalb)->delete();
+        AlbaranEdiCajas::where("codcli", $codcli)->where("ejerci", $ejerci)->where("numalb", $numalb)->delete();
+        AlbaranEdiLineas::where("codcli", $codcli)->where("ejerci", $ejerci)->where("numalb", $numalb)->delete();
+        AlbaranEdiLocalizaciones::where("codcli", $codcli)->where("ejerci", $ejerci)->where("numalb", $numalb)->delete();
+        AlbaranEdiPalets::where("codcli", $codcli)->where("ejerci", $ejerci)->where("numalb", $numalb)->delete();
+        AlbaranFisicoEdi::where("codcli", $codcli)->where("ejerci", $ejerci)->where("num_albaran", $numalb)->delete();
+        AlbaranLineasFisicoEdi::where("codcli", $codcli)->where("ejerci", $ejerci)->where("num_albaran", $numalb)->delete();
+
+    }
+
     public function getFinishExportEdi() {
 
-
+        
         $palets = \Request::get("palets");
         $albaran = \Request::get("albaran");
         $tipoPalets = \Request::get("tipoPalets");
         $tiendasList = \Request::get("tiendasList");
         $lineas = \Request::get("lineas");
+        $bultosCapas = \Request::get("bultosCapas");
+        $modify = \Request::get("modify");
+
+
+
+        $albaranEdi = new AlbaranEdi();
+        $albaranEdi->palets_json = $palets;
+        $albaranEdi->albaran_json = $albaran;
+        $albaranEdi->tipo_palets_json = $tipoPalets;
+        $albaranEdi->tiendas_list_json = $tiendasList;
+        $albaranEdi->lineas_json = $lineas;
+        $albaranEdi->bultos_capa_json = $bultosCapas;
 
         $palets = json_decode($palets);
         $albaran = json_decode($albaran);
         $tipoPalets = json_decode($tipoPalets);
         $tiendasList = json_decode($tiendasList);
         $lineas = json_decode($lineas);
+        $bultosCapas = json_decode($bultosCapas);
         $pedido = new \StdClass();
+
+        if($modify == "true") {
+            $this->removeAlbaranEdi($albaran->codcli, $albaran->ejerci, $albaran->numalb);
+        }
 
         $this->getPedido($albaran->ejeped, $albaran->codcli, $albaran->numped, $pedido);
 
-
-        $albaranEdi = new AlbaranEdi();
         $albaranEdi->num_expedicion = $albaran->ejerci.$albaran->codcli.$albaran->numalb;
         $pedidoEdi = $this->getPedidoEdi($albaran->ejeped, $albaran->codcli, $albaran->numped);
 
@@ -88,8 +141,13 @@ class EdiController extends Controller
         $albaranEdi->proveedor = $pedidoEdi->vendedor;
         $albaranEdi->comprador = $pedidoEdi->comprador;
         $albaranEdi->departamento = $pedidoEdi->dpto;
-        $albaranEdi->receptor = $pedidoEdi->comprador;
+        $albaranEdi->receptor = $pedidoEdi->receptor;
         $albaranEdi->totqty = 0;
+
+
+        $albaranEdi->codcli = $albaran->codcli;
+        $albaranEdi->ejerci = $albaran->ejerci;
+        $albaranEdi->numalb = $albaran->numalb;
 
         $paletsArr = array();
         $cajas = array();
@@ -99,11 +157,8 @@ class EdiController extends Controller
 
         for($i=0; $i<$numPalets; $i++) {
             $albaranEdiPalets = new AlbaranEdiPalets();
-            $albaranEdiPalets->codemp = 1;
-            $albaranEdiPalets->coddel = 1;
+
             $albaranEdiPalets->codcli = $albaran->codcli;
-            $albaranEdiPalets->tipalb = 'S';
-            $albaranEdiPalets->seralb = $albaran->seralb;
             $albaranEdiPalets->ejerci = $albaran->ejerci;
             $albaranEdiPalets->numalb = $albaran->numalb;
             $albaranEdiPalets->idpalet = $i+1;
@@ -119,33 +174,37 @@ class EdiController extends Controller
                 else $numBultos = $palets[$i][$j];
                 if($numBultos>0) {
                     $albaranEdiCajas = new AlbaranEdiCajas();
-                    $albaranEdiCajas->codemp = 1;
-                    $albaranEdiCajas->coddel = 1;
+
                     $albaranEdiCajas->codcli = $albaran->codcli;
-                    $albaranEdiCajas->tipalb = 'S';
-                    $albaranEdiCajas->seralb = $albaran->seralb;
                     $albaranEdiCajas->ejerci = $albaran->ejerci;
                     $albaranEdiCajas->numalb = $albaran->numalb;
                     $albaranEdiCajas->idpalet = $i + 1;
                     $albaranEdiCajas->idcaja = $j + 1;
                     $albaranEdiCajas->sscc = $this->getNextSscc($albaran->codcli, $numBultos);
                     $albaranEdiCajas->cantidad = $numBultos;
+                    $albaranEdiCajas->bultosCapas = $bultosCapas[$i][$j];
+                    $albaranEdiCajas->formato = $lineas[$j]->formato;
                     $albaranEdiCajas->save();
                     $cajas[] = $albaranEdiCajas;
 
-                    $query = "SELECT descri, codbar FROM artic WHERE codemp=1 and codcli = {$lineas[$j]->codcli} and codart = '{$lineas[$j]->codart}'";
+                    $query = "SELECT descri, codbar, codart FROM artic WHERE codemp=1 and codcli = {$lineas[$j]->codcli} and codart = '{$lineas[$j]->codart}'";
                     $result = Ctsql::ctsqlExport($query);
                     $result = json_decode($result[0]);
                     $articulo = $result->data[0];
 
+                    $query = "SELECT * FROM linalbar WHERE codemp=1 AND coddel = 1 AND codcli = ".$albaran->codcli." AND tipalb = 'S' AND ejerci = ".$albaran->ejerci.
+                        "AND numalb='".$albaran->numalb . "' AND numlin = ".($j+1);
+
+                    $articulos = Ctsql::ctsqlExport($query);
+                    $articulos = json_decode($articulos[0]);
+                    $articuloLinea = $articulos->data[0];
+
+
                     $udsBulto = $lineas[$j]->cantid/$lineas[$j]->bultos;
 
                     $albaranEdiLineas = new AlbaranEdiLineas();
-                    $albaranEdiLineas->codemp = 1;
-                    $albaranEdiLineas->coddel = 1;
+
                     $albaranEdiLineas->codcli = $albaran->codcli;
-                    $albaranEdiLineas->tipalb = 'S';
-                    $albaranEdiLineas->seralb = $albaran->seralb;
                     $albaranEdiLineas->ejerci = $albaran->ejerci;
                     $albaranEdiLineas->numalb = $albaran->numalb;
                     $albaranEdiLineas->idpalet = $i + 1;
@@ -155,6 +214,10 @@ class EdiController extends Controller
                     $albaranEdi->totqty += $udsBulto * $numBultos;
                     $albaranEdiLineas->descripcion = $articulo->descri;
                     $albaranEdiLineas->ean = $articulo->codbar;
+                    $albaranEdiLineas->referencia = $articulo->codart;
+                    $albaranEdiLineas->uds_bulto = $udsBulto;
+                    $albaranEdiLineas->bultos = $numBultos;
+                    $albaranEdiLineas->lote = $articuloLinea->lotefb;
                     $albaranEdiLineas->save();
                     $lineasArr[] = $albaranEdiLineas;
 
@@ -163,11 +226,8 @@ class EdiController extends Controller
 
                         if($numBultos > 0 ){
                             $albaranEdiLoc = new AlbaranEdiLocalizaciones();
-                            $albaranEdiLoc->codemp = 1;
-                            $albaranEdiLoc->coddel = 1;
+
                             $albaranEdiLoc->codcli = $albaran->codcli;
-                            $albaranEdiLoc->tipalb = 'S';
-                            $albaranEdiLoc->seralb = $albaran->seralb;
                             $albaranEdiLoc->ejerci = $albaran->ejerci;
                             $albaranEdiLoc->numalb = $albaran->numalb;
                             $albaranEdiLoc->idpalet = $i + 1;
@@ -186,13 +246,78 @@ class EdiController extends Controller
         }
 
         $albaranEdi->save();
-
-        $this->createEdiXml($albaranEdi, $paletsArr, $cajas, $lineasArr, $localizaciones);
+        $this->createAlbaranFisico($albaranEdi, $albaran, $lineasArr);
+        $this->createEdiXml($albaranEdi, $paletsArr, $cajas, $lineasArr, $localizaciones, $pedidoEdi);
         return json_encode(["result"=>"success"]);
 
     }
 
-    private function createEdiXml($albaranEdi, $albaranEdiPalets, $albaranEdiCajas, $albaranEdiLin, $albaranEdiLoc) {
+    private function createAlbaranFisico($albaranEdi, $albaran, $lineasArr) {
+        $albaranFisico = new AlbaranFisicoEdi();
+
+        $albaranFisico->codcli = $albaran->codcli;
+        $albaranFisico->ejerci = $albaran->ejerci;
+        $albaranFisico->num_albaran = $albaran->numalb;
+
+        $clienteEdi = EdiClientes::where("cod_interno", $albaran->codcli)->where("cliente_logival", 1)->first();
+        $entrageEdi = EdiClientes::where("ean", $albaranEdi->receptor)->first();
+        if($albaranEdi->comprador == "8480010023213")
+            $albaranFisico->codcli_proveedor = $clienteEdi->cod_eroski;
+
+        $albaranFisico->razon_proveedor = $clienteEdi->nombre;
+        $albaranFisico->direccion_proveedor = $clienteEdi->direccion;
+        $albaranFisico->poblacion_proveedor = $clienteEdi->poblacion;
+        $albaranFisico->provincia_proveedor = $clienteEdi->provincia;
+        $albaranFisico->cp_proveedor = $clienteEdi->cp;
+        $albaranFisico->telf_proveedor = $clienteEdi->tfno;
+        $albaranFisico->fax_proveedor = $clienteEdi->fax;
+        $albaranFisico->email_proveedor = $clienteEdi->email;
+        $albaranFisico->fecha_entrega = Carbon::createFromFormat("YmdHi", $albaranEdi->fecha_entrega)->toDateTimeString();
+        $albaranFisico->num_pedido_logival = $albaran->numped;
+        $albaranFisico->num_pedido_cliente = $albaranEdi->pedido_ref;
+        $albaranFisico->punto_operacional_proveedor = $clienteEdi->ean;
+        $albaranFisico->codigo_entrega = $entrageEdi->cod_interno;
+        $albaranFisico->nombre_entrega = $entrageEdi->nombre;
+        $albaranFisico->direccion_entrega = $entrageEdi->direccion;
+        $albaranFisico->cp_entrega = $entrageEdi->cp;
+        $albaranFisico->provincia_entrega = $entrageEdi->provincia;
+        $albaranFisico->poblacion_entrega = $entrageEdi->poblacion;
+        $albaranFisico->save();
+
+        $this->createLineasAlbaranFisico($albaran, $lineasArr);
+    }
+
+    private function createLineasAlbaranFisico($albaran, $lineasArr) {
+
+        $lineasFis = [];
+        foreach($lineasArr as $linea) {
+            if(!array_key_exists($linea->ean, $lineasFis)) {
+                $lineasFis[$linea->ean]["bultos"] = 0;
+                $lineasFis[$linea->ean]["cantidad_total"] = 0;
+            }
+            $lineasFis[$linea->ean]["bultos"]+=$linea->bultos;
+            $lineasFis[$linea->ean]["cantidad_total"]+=$linea->cantidad_total;
+            $lineasFis[$linea->ean]["referencia"] = $linea->referencia;
+            $lineasFis[$linea->ean]["uds_bulto"] = $linea->uds_bulto;
+            $lineasFis[$linea->ean]["descripcion"] = $linea->descripcion;
+        }
+        foreach($lineasFis as $ean=>$linea) {
+            $lineaFis = new AlbaranLineasFisicoEdi();
+            $lineaFis->codcli = $albaran->codcli;
+            $lineaFis->ejerci = $albaran->ejerci;
+            $lineaFis->num_albaran = $albaran->numalb;
+            $lineaFis->referencia = $linea['referencia'];
+            $lineaFis->bultos = $linea["bultos"];
+            $lineaFis->uds_bulto = $linea["uds_bulto"];
+            $lineaFis->uds_totales = $linea["cantidad_total"];
+            $lineaFis->descripcion = $linea["descripcion"];
+            $lineaFis->ean = $ean;
+            $lineaFis->save();
+        }
+    }
+
+
+    private function createEdiXml($albaranEdi, $albaranEdiPalets, $albaranEdiCajas, $albaranEdiLin, $albaranEdiLoc, $pedidoEdi) {
         $cab = new \SimpleXMLElement("<CAB></CAB>");
         $cab->addAttribute("IDCAB", 1);
         $cab->addAttribute("NUMDES", $albaranEdi->num_expedicion);
@@ -205,10 +330,15 @@ class EdiController extends Controller
         $cab->addAttribute("DESTINO", $albaranEdi->destino);
         $cab->addAttribute("PROVEEDOR", $albaranEdi->proveedor);
         $cab->addAttribute("COMPRADOR", $albaranEdi->comprador);
-        $cab->addAttribute("RECEPTOR", $albaranEdi->comprador);
+        $cab->addAttribute("RECEPTOR", $albaranEdi->receptor);
         $cab->addAttribute("DPTO", $albaranEdi->departamento);
         $cab->addAttribute("TOTQTY", $albaranEdi->totqty);
         $cab->addAttribute("IDENTIF", $albaranEdi->identif);
+        $cab->addAttribute("MATRIC", $albaranEdi->matricula_transportista);
+        $cab->addAttribute("ETAPATRANS", "20");
+        $cab->addAttribute("TIPTRANS", "30");
+
+
 
         $cps = 1;
         $idloc = 0;
@@ -223,6 +353,7 @@ class EdiController extends Controller
         $embCamion->addAttribute("CPS", $cps);
         $embCamion->addAttribute("TIPEMB", 201);
 
+
         foreach($albaranEdiPalets as $palet) {
             $cps++;
             $cpsPalet = $cps;
@@ -231,6 +362,7 @@ class EdiController extends Controller
             $embPalet->addAttribute("IDEMB", $cps);
             $embPalet->addAttribute("CPS", $cps);
             $embPalet->addAttribute("CPSPADRE", 1);
+
             $cantemb = 0;
             foreach($albaranEdiCajas as $caja) {
                 if($caja->idpalet == $palet->idpalet) {
@@ -255,6 +387,20 @@ class EdiController extends Controller
                         $embCaja->addAttribute("CPSPADRE", $cpsPalet);
                         $embCaja->addAttribute("CANTEMB", number_format(1.0, 3, '.', ''));
                         $embCaja->addAttribute("TIPEMB", "CT");
+                        $embCaja->addAttribute("FORMATO", $caja->formato);
+                        $numFormatos = $this->getNumFormatos($albaranEdiLin, $albaranEdiCajas, $caja, $palet);
+                        $embCaja->addAttribute("NUMFORMATO", $numFormatos);
+                        $embCaja->addAttribute("UMEDIDA", "PCE");
+                        if($caja->formato == "201" || $caja->formato == "200") {
+                            $bultform = $cantemb;
+                        }
+                        else {
+                            $bultform = $caja->bultosCapas;
+                        }
+                        $embCaja->addAttribute("BULTFORM", $bultform);
+                        $embCaja->addAttribute("BULTPALET", $cantemb);
+
+
                         $sscc = intval(substr_replace($caja->sscc, '', -1));
                         $sscc += $i;
                         $sscc .= $this->getSsccDigitControl($sscc);
@@ -274,6 +420,14 @@ class EdiController extends Controller
                                 $lin->addAttribute("EAN", $linea->ean);
                                 $lin->addAttribute("IDLIN", $idlin);
                                 $lin->addAttribute("TIPART", "CU");
+                                $lin->addAttribute("REFCLI", $linea->referencia);
+                                $lin->addAttribute("NUMEXP", $this->calculateDun($linea->ean));
+                                $lin->addAttribute("NUMPED", $albaranEdi->pedido_ref);
+                                $linPedido = EdiLinped::where("refean", $linea->ean)->where("cabped_id", $pedidoEdi->id)->first();
+                                $lin->addAttribute("NUMLINPED", $linPedido->clave2);
+                                $lin->addAttribute("LOTE", "LOT001");
+                                $lin->addAttribute("PROPMERC", $albaranEdi->proveedor);
+
 
                                 foreach ($albaranEdiLoc as $index => $localizacion) {
 
@@ -303,12 +457,19 @@ class EdiController extends Controller
         $dom->formatOutput = TRUE;
         $formatted = $dom->saveXML();
         $datetime = Carbon::create()->format("Ymdhis");
-        file_put_contents("/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml", $formatted);
-        //file_put_contents(storage_path("app/tmp/").$datetime.".xml", $formatted);
+        //file_put_contents("/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml", $formatted);
+        file_put_contents(storage_path("app/tmp/").$datetime.".xml", $formatted);
         exec("cd /ASPEDI && ./enviar_a_ediwin_asp.sh", $output);
     }
 
+    private function getAlbaranEdi($cliente, $ejercicio, $numAlbaran) {
+        return AlbaranEdi::where("codcli", $cliente)
+            ->where("ejerci", $ejercicio)
+            ->where("numalb", $numAlbaran)->first();
+    }
+
     public function getAlbaranForEdi() {
+
 
         $in = \Request::all();
         $ejercicio = $in["ejercicio"];
@@ -320,6 +481,7 @@ class EdiController extends Controller
         $linAlbaran = new \stdClass();
         $products = new \stdClass();
         $result = [];
+
 
 
         if(!$this->getAlbaran($ejercicio, $cliente, $numAlbaran, $albaran)) {
@@ -343,6 +505,20 @@ class EdiController extends Controller
             return json_encode($products);
         }
 
+        if($albaranEdi = $this->getAlbaranEdi($cliente, $ejercicio, $numAlbaran)) {
+            $result["success"] = true;
+            $result["modify"] = true;
+            $result["data"]["lin_albaran"] = json_decode($albaranEdi->lineas_json);
+            $result["data"]["albaran"] = json_decode($albaranEdi->albaran_json);
+            $result["data"]["products"] = $products;
+            $result["data"]["bultosCapas"] = json_decode($albaranEdi->bultos_capa_json);
+            $result["data"]["tipoPalets"] = json_decode($albaranEdi->tipo_palets_json);
+            $result["data"]["tiendasList"] = json_decode($albaranEdi->tiendas_list_json);
+            $result["data"]["palets"] = json_decode($albaranEdi->palets_json);
+
+            return $result;
+        }
+
         //$bultos = $this->getBultos($cliente, $linAlbaran, $products);
         $clienteEdi = EdiClientes::where("cod_interno", $cliente)->where("cliente_logival", 1)->first();
 
@@ -356,6 +532,11 @@ class EdiController extends Controller
             ->where("vendedor", $clienteEdi->ean)
             ->where("ejercicio", $ejercicio)
             ->first();
+
+        foreach($linAlbaran as &$lin) {
+            $linEdi = EdiLinped::where("cabped_id", $pedidoEdi->id)->where("refcli", $lin->codart)->first();
+            $lin->formato = $linEdi->formato;
+        }
 
         $tiendas = EdiLoclped::distinct()->select('lugar')->where("cabped_id", $pedidoEdi->id)->get();
 
@@ -371,6 +552,7 @@ class EdiController extends Controller
 
 
         $result["success"] = true;
+        $result["modify"] = false;
         $result["data"]["albaran"] = $albaran;
         $result["data"]["lin_albaran"] = $linAlbaran;
         $result["data"]["products"] = $products;
@@ -381,6 +563,42 @@ class EdiController extends Controller
 
 
         return $result;
+    }
+
+    private function getNumFormatos($linAlbaran, $cajasAlbaran, $caja, $palet) {
+
+        $palets = [];
+        $capas = 0;
+        $ean = "";
+        foreach($linAlbaran as $linea) {
+            if($linea->idcaja == $caja->idcaja && $palet->idpalet == $linea->idpalet) {
+                $ean = $linea->ean;
+            }
+        }
+
+        foreach($linAlbaran as $linea) {
+            if($linea->ean == $ean) {
+                $palets[$linea->idpalet] = 1;
+                foreach($cajasAlbaran as $cajaAlbaran) {
+                    if($cajaAlbaran->idpalet == $linea->idpalet && $linea->idcaja == $cajaAlbaran->idcaja) {
+                        $capas += ceil($cajaAlbaran->cantidad / $cajaAlbaran->bultosCapas);
+                    }
+                }
+            }
+        }
+
+        if($caja->formato == "201" || $caja->formato == "200") {
+            return array_sum($palets);
+        }
+        else return $capas;
+
+    }
+
+    private function calculateDun($ean) {
+        $ean = substr($ean,0,-1);
+        $dun = "1" . $ean;
+        $dun .= $this->getSsccDigitControl($dun);
+        return $dun;
     }
 
     private function getPedidoEdi($ejercicio, $codcli, $pedido_base) {
@@ -415,8 +633,7 @@ class EdiController extends Controller
     private function getNextSscc($codcli, $cant = 1) {
 
         if(!self::$sscc) {
-            $ssccCaja = \DB::table("albaran_edi_cajas")->select(\DB::raw("MAX(SUBSTRING(sscc, 1, CHAR_LENGTH(sscc) - 1)) AS sscc_no_digit"))->select("cantidad")->where("codcli", $codcli)->first();
-
+            $ssccCaja = \DB::table("albaran_edi_cajas")->select(\DB::raw("MAX(SUBSTRING(sscc, 1, CHAR_LENGTH(sscc) - 1)) AS sscc_no_digit"), "cantidad")->where("codcli", $codcli)->first();
             if($ssccCaja) {
                 $nextSccc = $ssccCaja->sscc_no_digit + $ssccCaja->cantidad;
             }
@@ -693,16 +910,19 @@ class EdiController extends Controller
         $refped = intval($cabped->numped);
         $fecped = $fechaPedido->format("d/m/Y");
         $fecent = $fechaEntrega->format("d/m/Y");
-        $comprador = EdiClientes::where("ean", $cabped->comprador)->first();
-        $nomtec = $comprador->nombre;
-        $nomfis = $comprador->nombre_fiscal;
-        $dirtec = $comprador->direccion;
-        $pobtec = $comprador->poblacion . " (".$comprador->provincia.")";
-        $cpotec = $comprador->cp;
-        $observ = $comprador->observaciones . " No. PEDIDO: ".$refped;
+        $receptor = EdiClientes::where("ean", $cabped->receptor)->first();
+        $nomtec = $receptor->nombre;
+        $nomfis = $receptor->nombre_fiscal;
+        $dirtec = $receptor->direccion;
+        $pobtec = $receptor->poblacion . " (".$receptor->provincia.")";
+        $cpotec = $receptor->cp;
+        $observ = $receptor->observaciones . " No. PEDIDO: ".$refped;
+        if($receptor->tfno) {
+            $observ .= " TFNO: ".$receptor->tfno;
+        }
         $pobdis = $pobtec;
         $ctsql = "SELECT MAX(numped) as maxped FROM pedidos WHERE codcli=$codcli";
-        $eanComprador = substr_replace($comprador->ean, '', -1);
+        $eanReceptor = substr_replace($receptor->ean, '', -1);
         $maxPedido = Ctsql::ctsqlExport($ctsql);
         $maxPedido = json_decode($maxPedido[0]);
         if(count($maxPedido->data) < 1) {
@@ -711,6 +931,9 @@ class EdiController extends Controller
         else {
             $numped = intval($maxPedido->data[0]->maxped) + 1;
         }
+
+        $comprador = EdiClientes::where("ean", $cabped->comprador)->first();
+        $eanComprador = $comprador->ean;
 
         $cabped->pedido_base = $numped;
         $cabped->save();
@@ -737,7 +960,18 @@ class EdiController extends Controller
 
         Ctsql::ctsqlImport($query);
         $this->saveLineasPedido($cabped, $codcli, $numped);
+        $this->checkNotFoundProducts();
 
+    }
+
+    private function checkNotFoundProducts() {
+        if(count($this->productsNotFound) > 0) {
+            \Mail::send("emails.orders.edi-no-artic", ["data"=>$this->productsNotFound], function ($message)  {
+                $message->from("noreply@logival.es", "Logival Avisos");
+                $message->to("alvaro.bano.fos@gmail.com", "Yolanda");
+                $message->subject("Pedido EDI con artículos erróneos");
+            });
+        }
     }
 
     private function saveLineasPedido($cabped, $codcli, $numped) {
@@ -751,6 +985,7 @@ class EdiController extends Controller
 
             $numlin = $linPed->clave2;
             $sku = $linPed->refcli;
+            $sku = ltrim($sku, '0');
             $cantid = $linPed->cantped;
             $descri = $linPed->descmer;
 
@@ -791,26 +1026,81 @@ class EdiController extends Controller
 
     private function adviseNoArtic($codart, $descri, $cantid, $numped, $codcli) {
 
+
         $data["codart"] = $codart;
         $data["descri"] = $descri;
         $data["cantid"] = $cantid;
-        $data["numped"] = $numped;
         $data["codcli"] = $codcli;
 
-        \Mail::send("emails.orders.edi-no-artic", $data, function ($message) use ($data)  {
-            $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("admon@logival.es", "Yolanda");
-            $message->subject("Pedido EDI con artículo erróneo");
-        });
+        $this->productsNotFound[$numped][] = $data;
     }
 
-    public function getTest() {
-        $query = "SELECT * FROM albaran WHERE numalb=1 and codcli=176";
+    public function getExtractAddressData() {
+        /*$query = "SELECT * FROM linalbar WHERE numalb=2 and codcli=176";
         $result = Ctsql::ctsqlExport($query);
         $result = json_decode($result[0]);
 
 
-        dd($result);
+        dd($result);*/
+
+        $clientes = EdiClientes::where("nombre_fiscal", 'SOCIEDAD DE COMPRAS MODERNAS, S.A.')->get();
+
+        foreach ($clientes as $cliente) {
+            $address = $cliente->direccion;
+            $address = urlencode($address);
+            if($address) {
+                $url = "http://maps.googleapis.com/maps/api/geocode/json?address=" . $address . "&sensor=false";
+                $json = json_decode(file_get_contents($url), true);
+                if ($json["status"] == "OK") {
+                    $result = $json['results'][0];
+                    $direccion = "";
+                    $numero = null;
+                    $cp = "";
+                    $poblacion = "";
+                    $provincia = "";
+                    foreach ($result['address_components'] as $address_component) {
+                        if ($this->isAddressComponent($address_component['types'], "street_number")) {
+                            $numero = $address_component['short_name'];
+                        }
+
+                        if ($this->isAddressComponent($address_component['types'], "route")) {
+                            $direccion = $address_component['short_name'];
+                        }
+
+                        if ($this->isAddressComponent($address_component['types'], "locality")) {
+                            $poblacion = $address_component['long_name'];
+                        }
+
+                        if ($this->isAddressComponent($address_component['types'], "administrative_area_level_2")) {
+                            $provincia = $address_component['long_name'];
+                        }
+
+                        if ($this->isAddressComponent($address_component['types'], "postal_code")) {
+                            $cp = $address_component['long_name'];
+                        }
+                    }
+
+
+                    if ($numero) {
+                        $direccion .= ", $numero";
+                    }
+                    $cliente->direccion = $direccion;
+                    $cliente->cp = $cp;
+                    $cliente->poblacion = $poblacion;
+                    $cliente->provincia = $provincia;
+                    $cliente->save();
+                }
+            }
+        }
+    }
+
+    private function isAddressComponent($types_to_search, $needle) {
+        foreach($types_to_search as $type) {
+            if($type == $needle) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

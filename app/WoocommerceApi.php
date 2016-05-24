@@ -11,10 +11,10 @@ namespace App;
 
 class WoocommerceApi
 {
-    private static $CONSUMER_KEY = "ck_5e7db36b0c8c853e6fb3cc7ddfdaeea643df33dc";
-    private static $CONSUMER_SECRET = "cs_fcb19a187a3c5977c835020c2ace3781e55bd89c";
+    public static $CONSUMER_KEY = "ck_5e7db36b0c8c853e6fb3cc7ddfdaeea643df33dc";
+    public static $CONSUMER_SECRET = "cs_fcb19a187a3c5977c835020c2ace3781e55bd89c";
     //Example: http://www.example.com
-    private static $HOST = "http://www.thesuntime.com";
+    public static $HOST = "http://www.thesuntime.com";
     private static $me = null;
 
 

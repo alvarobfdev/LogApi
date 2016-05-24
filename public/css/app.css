@@ -25,3 +25,11 @@
     margin-top: 5px;
 }
 
+#capaVisorPalets .bultoCapa {
+    background-image: url('../logival/img/ico-cajas-palet.png');
+    background-repeat: no-repeat;
+    padding-left: 52px;
+    line-height: 48px;
+    margin-top: 5px;
+}
+

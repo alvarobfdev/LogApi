@@ -12,6 +12,8 @@ namespace App\Http\Controllers;
 use App\Artic;
 use App\Ctsql;
 use App\ProductsEdiModel;
+use App\RestApiModels\Cliente;
+use App\RestApiModels\User;
 use App\WoocommerceApi;
 
 class AppController extends Controller
@@ -69,14 +71,6 @@ class AppController extends Controller
 
         return $result;
     }
-
-
-
-
-
-
-
-
 
     public function getDasanciProducts($codcli) {
         $productos = [];
@@ -252,6 +246,32 @@ VALUES
         $query = "UPDATE artic set kgsuni=0 WHERE codcli=60 or codcli=90 or codcli=50";
         //$result = Ctsql::ctsqlImport($query);
 
+    }
+
+    public function getLoteDasanci() {
+        $query = "UPDATE artic set caduci = 'L' WHERE codcli = '1580'";
+        $ctsql = Ctsql::ctsqlImport($query);
+        var_dump($ctsql);
+    }
+
+    public function getPedidos($codcli) {
+        $query = "SELECT * FROM pedidos WHERE codcli=$codcli AND ejeped=2016 LIMIT 0,10";
+        $data = Ctsql::ctsqlExport($query);
+        $data = json_decode($data[0]);
+        dd($data);
+    }
+
+    public function getTest() {
+        $result = Ctsql::ctsqlExport("SELECT * FROM clientes");
+        $clientes = json_decode($result[0]);
+        $clientes = $clientes->data;
+        foreach($clientes as $cliente) {
+            $mongoCliente = new Cliente();
+            foreach(get_object_vars($cliente) as $index=>$value) {
+                $mongoCliente->$index = $cliente->$index;
+            }
+            $mongoCliente->save();
+        }
     }
 
 
