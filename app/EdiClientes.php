@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class EdiClientes extends Model
 {
+    protected $connection = 'mysql';
+
     protected $table = "edi_clientes";
     public $timestamps = false;
 }

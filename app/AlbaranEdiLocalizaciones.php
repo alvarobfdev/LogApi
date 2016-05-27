@@ -13,5 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AlbaranEdiLocalizaciones extends Model
 {
+    protected $connection = 'mysql';
+
     protected $table = "albaran_edi_localizaciones";
 }

@@ -77,6 +77,8 @@ return [
     'unique'               => 'The :attribute has already been taken.',
     'url'                  => 'The :attribute format is invalid.',
 
+    'unique_pedido'         => 'The :attribute code is not unique',
+
     /*
     |--------------------------------------------------------------------------
     | Custom Validation Language Lines

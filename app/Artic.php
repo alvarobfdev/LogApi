@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Artic extends Model
 {
+    protected $connection = 'mysql';
+
     protected $table = "artic";
     public $timestamps = false;
 }

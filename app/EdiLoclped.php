@@ -12,7 +12,8 @@ namespace App;
 use Illuminate\Database\Eloquent\Model;
 
 class EdiLoclped extends Model
-{
+{    protected $connection = 'mysql';
+
     protected $table = "edi_loclped";
     public $timestamps = false;
 }

@@ -13,6 +13,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class EdiCabped extends Model
 {
+    protected $connection = 'mysql';
+
+
     protected $table = "edi_cabped";
     public $timestamps = false;
 }

@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProductsEdiModel extends Model
 {
+    protected $connection = 'mysql';
+
     protected $table = "productos_edi";
 
 

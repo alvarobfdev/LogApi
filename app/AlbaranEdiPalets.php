@@ -13,5 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AlbaranEdiPalets extends Model
 {
+    protected $connection = 'mysql';
+
     protected $table = "albaran_edi_palets";
 }

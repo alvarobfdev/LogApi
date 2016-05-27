@@ -38,10 +38,14 @@ class AuthApi
 
         $user = User::where("auth_key", $key)->where("auth_token", $token)->first();
 
+
         if(!$user) {
             return response('Unauthorized.', 401);
 
         }
-        else return $next($request);
+
+        \Session::put('user', $user);
+
+        return $next($request);
     }
 }

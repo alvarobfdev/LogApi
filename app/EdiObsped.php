@@ -13,5 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class EdiObsped extends Model
 {
+    protected $connection = 'mysql';
+
     protected $table = "edi_obsped";
 }

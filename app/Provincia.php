@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Provincia extends Model
 {
+    protected $connection = 'mysql';
+
     protected $table = "paispro";
 
     public static function getProvincia($provin) {

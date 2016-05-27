@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class EdiLinped extends Model
 {
+    protected $connection = 'mysql';
+
     protected $table = "edi_linped";
     public $timestamps = false;
 }

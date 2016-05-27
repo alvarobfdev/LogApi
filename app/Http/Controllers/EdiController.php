@@ -140,7 +140,7 @@ class EdiController extends Controller
         $albaranEdi->destino = $pedidoEdi->comprador;
         $albaranEdi->proveedor = $pedidoEdi->vendedor;
         $albaranEdi->comprador = $pedidoEdi->comprador;
-        $albaranEdi->departamento = $pedidoEdi->dpto;
+        $albaranEdi->departamento = $pedidoEdi->depto;
         $albaranEdi->receptor = $pedidoEdi->receptor;
         $albaranEdi->totqty = 0;
 
@@ -331,7 +331,7 @@ class EdiController extends Controller
         $cab->addAttribute("PROVEEDOR", $albaranEdi->proveedor);
         $cab->addAttribute("COMPRADOR", $albaranEdi->comprador);
         $cab->addAttribute("RECEPTOR", $albaranEdi->receptor);
-        $cab->addAttribute("DPTO", $albaranEdi->departamento);
+        $cab->addAttribute("DEPTO", $albaranEdi->departamento);
         $cab->addAttribute("TOTQTY", $albaranEdi->totqty);
         $cab->addAttribute("IDENTIF", $albaranEdi->identif);
         $cab->addAttribute("MATRIC", $albaranEdi->matricula_transportista);
@@ -633,7 +633,7 @@ class EdiController extends Controller
     private function getNextSscc($codcli, $cant = 1) {
 
         if(!self::$sscc) {
-            $ssccCaja = \DB::table("albaran_edi_cajas")->select(\DB::raw("MAX(SUBSTRING(sscc, 1, CHAR_LENGTH(sscc) - 1)) AS sscc_no_digit"), "cantidad")->where("codcli", $codcli)->first();
+            $ssccCaja = \DB::connection('mysql')->table("albaran_edi_cajas")->select(\DB::connection('mysql')->raw("MAX(SUBSTRING(sscc, 1, CHAR_LENGTH(sscc) - 1)) AS sscc_no_digit"), "cantidad")->where("codcli", $codcli)->first();
             if($ssccCaja) {
                 $nextSccc = $ssccCaja->sscc_no_digit + $ssccCaja->cantidad;
             }
@@ -861,7 +861,7 @@ class EdiController extends Controller
 
         $cab = new EdiCabped();
         foreach(get_object_vars($pedido) as $index=>$var) {
-            if(!is_array($var) && \Schema::hasColumn($cab->getTable(), $index)) {
+            if(!is_array($var) && \Schema::connection('mysql')->hasColumn($cab->getTable(), $index)) {
                 $index = strtolower($index);
                 $cab->$index = $var;
             }
@@ -877,7 +877,7 @@ class EdiController extends Controller
         foreach($pedido->LINEAS as $linea) {
             $lins = new EdiLinped();
             foreach(get_object_vars($linea) as $index => $var) {
-                if (!is_array($var) && \Schema::hasColumn($lins->getTable(), $index)) {
+                if (!is_array($var) && \Schema::connection('mysql')->hasColumn($lins->getTable(), $index)) {
                     $index = strtolower($index);
                     $lins->$index = $var;
                 }
@@ -886,7 +886,7 @@ class EdiController extends Controller
             foreach($linea->LOCS as $loc) {
                 $locDb = new EdiLoclped();
                 foreach(get_object_vars($loc) as $index => $var) {
-                    if (!is_array($var) && \Schema::hasColumn($locDb->getTable(), $index)) {
+                    if (!is_array($var) && \Schema::connection('mysql')->hasColumn($locDb->getTable(), $index)) {
                         $index = strtolower($index);
                         $locDb->$index = $var;
                     }

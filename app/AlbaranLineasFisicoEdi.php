@@ -13,5 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AlbaranLineasFisicoEdi extends Model
 {
+    protected $connection = 'mysql';
+
     protected $table = "albaran_lineas_fisico_edi";
 }

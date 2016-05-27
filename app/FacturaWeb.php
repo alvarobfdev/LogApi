@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class FacturaWeb extends Model
 {
+    protected $connection = 'mysql';
+
     protected $table = "facturas_web";
 
 }

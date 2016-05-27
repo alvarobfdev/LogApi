@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\RestApi;
 
+use App\RestApiModels\LineasPedido;
+use App\RestApiModels\Pedido;
 use App\RestApiModels\User;
 use Illuminate\Http\Request;
 
 use App\Http\Requests;
 
-class UserController extends Controller
+class PedidoController extends Controller
 {
 
 
@@ -41,20 +43,40 @@ class UserController extends Controller
     public function store(Request $request)
     {
         try {
-            if (!$request->has("user")) {
-                return response('Bad Request 1.', 400);
-            }
-            if (!$this->checkObligatoryFields($request->get("user"), User::$obligatory_post_fields)) {
-                return response('Bad Request 2.', 400);
+
+
+            if (!$request->has("pedidos")) {
+                return response('Bad Request', 400);
             }
 
-            $object = new User();
-            $this->addObligatoryFields($request->get("user"), User::$obligatory_post_fields, $object);
-            $object->auth_key = str_random(60);
-            $object->auth_token = str_random(60);
-            $object->save();
+            foreach($request->get("pedidos") as $pedido) {
 
-            return $object->toJson();
+                $validator = \Validator::make($pedido, Pedido::$validation);
+
+                if($validator->fails()) {
+                    $response['errors'] = $validator->errors();
+                    return response(json_encode($response), 400);
+                }
+
+                foreach($pedido["linped"] as $linea) {
+                    $validator = \Validator::make($linea, LineasPedido::$validation);
+
+                    if($validator->fails()) {
+                        $response['errors'] = $validator->errors();
+                        return response(json_encode($response), 400);
+                    }
+                }
+
+
+
+
+                /*if (!$this->checkObligatoryFields($pedido, new Pedido())) {
+                    return response('Bad Request 2.', 400);
+                }*/
+            }
+
+            return "OK";
+
         }
         catch(\Exception $e) {
             return response('Internal Server Error.', 500);

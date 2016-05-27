@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class FormaPagos extends Model
 {
+    protected $connection = 'mysql';
+
     protected $table = "forpagos";
 
     public static function getFormaPago($forpag) {

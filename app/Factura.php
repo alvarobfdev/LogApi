@@ -4,7 +4,9 @@ use Illuminate\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 
 class factura extends Model  {
-	
+
+	protected $connection = 'mysql';
+
 	protected $table = 'cabfactu';
 	protected $primaryKey = 'id';
 	const LINES_PER_PAGE = 48;

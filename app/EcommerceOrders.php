@@ -13,5 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class EcommerceOrders extends Model
 {
+    protected $connection = 'mysql';
+
     protected $table = "ecommerce_orders";
 }

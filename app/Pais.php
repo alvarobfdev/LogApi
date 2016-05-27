@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Pais extends Model
 {
+    protected $connection = 'mysql';
+
     protected $table = "paises";
 
     public static function getPais($pais) {

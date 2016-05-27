@@ -11,8 +11,10 @@ namespace App\Http\Controllers;
 
 use App\Artic;
 use App\Ctsql;
+use App\EdiCabped;
 use App\ProductsEdiModel;
 use App\RestApiModels\Cliente;
+use App\RestApiModels\Pedido;
 use App\RestApiModels\User;
 use App\WoocommerceApi;
 
@@ -262,15 +264,68 @@ VALUES
     }
 
     public function getTest() {
-        $result = Ctsql::ctsqlExport("SELECT * FROM clientes");
-        $clientes = json_decode($result[0]);
-        $clientes = $clientes->data;
-        foreach($clientes as $cliente) {
-            $mongoCliente = new Cliente();
-            foreach(get_object_vars($cliente) as $index=>$value) {
-                $mongoCliente->$index = $cliente->$index;
+        return EdiCabped::all()->toJson();
+    }
+
+
+    public function getInsertEciToybags()
+    {
+
+        $dataToInsert = [
+            ['T960L-014','25644320','CARRO MOCHILA FROZEN  42 CM  EXTRAIBLE,  CON LUZ EN LAS RUEDAS.','8436021460097','6'],
+            ['T424-014','25474298','MOCHILA 42 CM FROZEN CON ADAPTADOR PARA CARRO.','8436021460066','6'],
+            ['T323-014','25474306','MOCHILA FROZEN PEQUEÑA','8436021461056','6'],
+            ['T607-014','25543100','BOLSO FROZEN','8436021461049','12'],
+            ['T632-014','25543118','SACO FROZEN GRANDE.','8436021460042','12'],
+            ['T103-014','21972006','PORTATODO NECESER FROZEN .','8436021460073','12'],
+            ['T157-014','21972014','PORTATODO TRIPLE FROZEN .','8436021460059','12'],
+            ['T154-014','25543126','FUNDA PARA FLAUTA FROZEN','8436021461315','24'],
+            ['T810-008-CI','25644338','CARRO CON BOLSILLO + PORTATODO REGALO FINDING DORY.','8436021461322','6'],
+            ['CR2020029SET','25644346','Marvel AVENGERS Carro fijo + Portatodo  Regalo.','5411217826102','6'],
+        ];
+
+        foreach($dataToInsert as $artic) {
+
+            $query = "DELETE FROM artic WHERE codart = '{$artic[1]}' AND codcli = 176";
+            $ctsql = Ctsql::ctsqlImport($query);
+
+
+            $refEci = $artic[1];
+            $descrp = substr($artic[2], 0, 34) . " C/".$artic[4];
+            $ean = $artic[3];
+
+            $query  = "INSERT INTO artic (codemp, codcli, codart, descri, kgsuni, facbas, basalm, precio, stkmin, baralm, caduci, tipzon, volume, codbar, ctlser, adecua, barcpe, basman, barman, basmen, barmen, basmsa, barmsa, envweb, fifoli, codkit, codcom)
+VALUES
+(1, 176, '{$refEci}', '{$descrp}', 1.000, 0.000, 'BUL', 0.00, 0.000, 'Z', 'N', '', 0.000, '{$ean}', 'N', '', '0', 'BUL', '0', 'BUL', '0', 'BUL', '0', 'N', '', '', 0)";
+
+            $ctsql = Ctsql::ctsqlImport($query);
+            var_dump($ctsql);
+
+        }
+    }
+
+
+    public function getImportarPedidosToybags() {
+        $result = Ctsql::ctsqlExport("SELECT * from pedidos WHERE codcli=176");
+        $data = json_decode($result[0]);
+        foreach($data->data as $pedidoCtsql) {
+            $pedido = new Pedido();
+            foreach(get_object_vars($pedidoCtsql) as $index=>$value) {
+
+
+                if($index != "numped" || $pedido->numped == NULL) {
+
+                    $pedido->$index = $value;
+
+                }
+                if($index == "refped" && $value!="") {
+                    $pedido->numped = $value;
+                }
             }
-            $mongoCliente->save();
+            echo $pedido->toJson();
+            $pedido->save();
+
+
         }
     }
 

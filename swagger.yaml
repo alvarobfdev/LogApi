@@ -1,0 +1,157 @@
+swagger: '2.0'
+info:
+  version: '1'
+  title: Logival REST API
+  description: >-
+    REST API allows Logival data to be created, read, updated, and deleted using
+    JSON format.
+
+definitions:
+  "pedidos": {
+    "type": "array",
+    "items":{
+      "type":"object",
+      "required": [
+        "numped",
+        "tipped",
+        "nomter",
+        "dirter",
+        "pobter",
+        "provter",
+        "tlfter",
+        "linped"
+      ],
+
+      "properties": {
+        "numped": {
+          "type": "string",
+          "description": "Número de pedido"
+        },
+        "tipped": {
+          "type": "string",
+          "maxLength": 1,
+          "minLength": 1,
+          "description": "Tipo de pedido: 'E'|'S' (E: Entrada de mercancia a Logival, S: Salida de mercancia desde Logival"
+        },
+        "fecent":{
+          "type":"string",
+          "format":"date",
+          "description":"Fecha de entrega de mercancia (Formato: dd/mm/yyyy)"
+        },
+        "nomter":{
+          "type":"string",
+          "description":"Nombre destino mercancia"
+        },
+        "codter":{
+          "type":"string",
+          "description":"Código destino mercancia"
+        },
+        "dirter": {
+          "type":"string",
+          "description":"Dirección destino mercancia"
+        },
+        "pobter": {
+          "type":"string",
+          "description":"Población destino mercancia"
+        },
+        "provter":{
+          "type":"string",
+          "description":"Provincia destino mercancia"
+        },
+        "cpter":{
+          "type":"string",
+          "description":"Código postal destino mercancia"
+        },
+        "tlfter":{
+          "type":"array",
+          "description":"Array de teléfonos de contacto del destino de la mercancia",
+          "items":{
+            "type":"string"
+          }
+        },
+        "mailter":{
+          "type":"string",
+          "description":"Mail contacto destino mercancia"
+        },
+        "serpar":{
+          "type":"string",
+          "maxLength": 1,
+          "minLength": 1,
+          "description":"La mercancia se puede servir parcialmente: 'S'|'N' (S:Si, N:No)"
+        },
+        "reserv":{
+          "type":"string",
+          "maxLength": 1,
+          "minLength": 1,
+          "description":"Pedido en reserva: 'S'|'N' (S:Si, N:No)"
+        },
+        "cpter":{
+          "type":"string",
+          "description":"Código postal destino mercancia"
+        },
+        "linped":{
+          "type":"array",
+          "description":"Array con las líneas del pedido",
+          "items":{
+            "type":"object",
+            "properties": {
+              "codart": {
+                "type":"string",
+                "description":"Código del artículo (Obligatorio si no se inserta 'codean')"
+              },
+              "cantid": {
+                "type":"number",
+                "format":"float",
+                "description":"Cantidad del artículo"
+              },
+              "codean": {
+                "type": "string",
+                "description": "Código EAN del artículo (Obligatorio si no se inserta 'codart')"
+              },
+              "bultos": {
+                "type": "integer",
+                "description": "Bultos que contienen el artículo"
+              }
+            },
+            "required": [
+                "codart",
+                "cantid"
+            ],
+          }
+        },
+      }
+
+    }
+
+
+  }
+
+paths: {
+  "/pedidos": {
+    "post": {
+      "description": "Array de pedidos a insertar",
+      "produces": [
+        "application/json"
+      ],
+      "consumes": [
+        "application/json"
+      ],
+      "parameters":[{
+        "schema": {
+          "$ref": "#/definitions/pedidos"
+        },
+        "in":"body",
+        "name":"pedidos",
+        "required":true
+      }],
+      "responses": {
+        "200": {
+          "description": "Pedidos insertados"
+        },
+        "405": {
+          "description": "Entrada incorrecta"
+        }
+      }
+    }
+  }
+}

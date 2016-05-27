@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Cliente extends Model
 {
+    protected $connection = 'mysql';
+
 
     protected $table = "clientes";
 }
