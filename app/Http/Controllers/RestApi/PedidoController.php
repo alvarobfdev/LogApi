@@ -12,16 +12,36 @@ use App\Http\Requests;
 class PedidoController extends Controller
 {
 
-
-
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $user = \Session::get("user");
+
+        $validator = \Validator::make($request->all(), Pedido::$validationFilters);
+
+        if($validator->fails()) {
+            $response['errors'] = $validator->errors();
+            return response(json_encode($response), 405);
+        }
+
+        $pedidos = Pedido::where("codcli", $user->codcli);
+
+        foreach(Pedido::$validationFilters as $indexValidation=>$validation) {
+            if($request->has($indexValidation) && $indexValidation != "limit" && $indexValidation != "page") {
+                $pedidos = $pedidos->where($indexValidation, $request->get($indexValidation));
+            }
+        }
+
+        if($request->has("limit")) {
+            $limit = $request->get("limit");
+            $this->limitPerPage = ($limit < $this->maxLimit) ? $limit : $this->maxLimit;
+        }
+
+        return $pedidos->paginate($this->limitPerPage);
     }
 
     /**
@@ -46,7 +66,7 @@ class PedidoController extends Controller
 
 
             if (!$request->has("pedidos")) {
-                return response('Bad Request', 400);
+                return response('Bad Input', 405);
             }
 
             foreach($request->get("pedidos") as $pedido) {
@@ -55,7 +75,7 @@ class PedidoController extends Controller
 
                 if($validator->fails()) {
                     $response['errors'] = $validator->errors();
-                    return response(json_encode($response), 400);
+                    return response(json_encode($response), 405);
                 }
 
                 foreach($pedido["linped"] as $linea) {
@@ -63,16 +83,10 @@ class PedidoController extends Controller
 
                     if($validator->fails()) {
                         $response['errors'] = $validator->errors();
-                        return response(json_encode($response), 400);
+                        return response(json_encode($response), 405);
                     }
                 }
 
-
-
-
-                /*if (!$this->checkObligatoryFields($pedido, new Pedido())) {
-                    return response('Bad Request 2.', 400);
-                }*/
             }
 
             return "OK";

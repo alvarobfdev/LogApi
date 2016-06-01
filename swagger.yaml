@@ -19,7 +19,10 @@ definitions:
         "pobter",
         "provter",
         "tlfter",
-        "linped"
+        "linped",
+        "cpter",
+        "serpar",
+        "reserv"
       ],
 
       "properties": {
@@ -66,7 +69,8 @@ definitions:
           "type":"array",
           "description":"Array de teléfonos de contacto del destino de la mercancia",
           "items":{
-            "type":"string"
+            "type":"string",
+            "minItems":1
           }
         },
         "mailter":{
