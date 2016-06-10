@@ -16,7 +16,8 @@ class Pedido extends Model
         'tipped' => 'required|in:E,S',
         'numped' => 'required|unique_pedido',
         'linped' => 'required|array',
-        'fecent' => 'date_format:d/m/Y',
+        'fecent' => 'date_format:Y-m-d',
+        'codter' => 'string',
         'nomter' => 'required',
         'dirter' => 'required',
         'pobter' => 'required',
@@ -28,10 +29,30 @@ class Pedido extends Model
         'reserv' => 'required|in:S,N',
     ];
 
+    public static $adminValidation = [
+        'codcli' => 'required|integer',
+    ];
+
+    public static $validationUpdate = [
+        'tipped' => 'in:E,S',
+        'numped' => 'string',
+        'linped' => 'array',
+        'fecent' => 'date_format:Y-m-d',
+        'nomter' => 'string',
+        'dirter' => 'string',
+        'pobter' => 'string',
+        'provter' => 'string',
+        'cpter' => 'string',
+        'tlfter' => 'array|not_empty_array',
+        'portes' => 'in:P,S,N,D',
+        'serpar' => 'in:S,N',
+        'reserv' => 'in:S,N',
+    ];
+
     public static $validationFilters = [
         'tipped' => 'in:E,S',
         'numped' => 'string',
-        'fecent' => 'date_format:d/m/Y',
+        'fecent' => 'date_format:Y-m-d',
         'nomter' => 'string',
         'dirter' => 'string',
         'pobter' => 'string',
@@ -39,7 +60,7 @@ class Pedido extends Model
         'cpter' => 'string',
         'portes' => 'in:P,S,N,D',
         'limit' => 'integer',
-        'page' => 'integer'
+        'page' => 'integer',
 
     ];
 

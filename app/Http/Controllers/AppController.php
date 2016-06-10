@@ -263,9 +263,7 @@ VALUES
         dd($data);
     }
 
-    public function getTest() {
-        return EdiCabped::all()->toJson();
-    }
+
 
 
     public function getInsertEciToybags()
@@ -329,6 +327,64 @@ VALUES
         }
     }
 
+    public function getTest() {
+        $sql = "SELECT * FROM artic WHERE codcli = 132 ORDER BY codart DESC LIMIT 0, 1";
+        $result = Ctsql::ctsqlExport($sql);
+        dd(json_decode($result[0]));
+    }
 
 
+    public function getAddExtraRefs()
+    {
+        $dataToInsert = [
+            ['E56354TTF', '18847152', 'MOCHILITA BLAZE AZUL.', '5416233261685', '6'],
+            ['E103540TTF', '18847160', 'MOCHILA C/RUEDASY BOLSILLO BLAZE AZUL.', '5416233261753', '6']
+        ];
+
+        foreach ($dataToInsert as $artic) {
+
+            $refEci = $artic[1];
+            $descrp = substr($artic[2], 0, 34) . " C/" . $artic[4];
+            $ean = $artic[3];
+
+            $query = "INSERT INTO artic (codemp, codcli, codart, descri, kgsuni, facbas, basalm, precio, stkmin, baralm, caduci, tipzon, volume, codbar, ctlser, adecua, barcpe, basman, barman, basmen, barmen, basmsa, barmsa, envweb, fifoli, codkit, codcom)
+VALUES
+(1, 176, '{$refEci}', '{$descrp}', 1.000, 0.000, 'BUL', 0.00, 0.000, 'Z', 'N', '', 0.000, '{$ean}', 'N', '', '0', 'BUL', '0', 'BUL', '0', 'BUL', '0', 'N', '', '', 0)";
+
+            $ctsql = Ctsql::ctsqlImport($query);
+            var_dump($ctsql);
+
+        }
+    }
+
+    public function getUpdateKilosToybags() {
+        $sql = "SELECT * FROM artic where codcli = 176";
+        $result = Ctsql::ctsqlExport($sql);
+        echo $result[0]."<br><br>";
+        $result = json_decode($result[0]);
+        foreach($result->data as $artic) {
+            $udsBulto = substr($artic->descri, -4, 2);
+            if($udsBulto == "C/") {
+                $udsBulto = substr($artic->descri, -2, 2);
+                $kilos = $artic->kgsuni / $udsBulto;
+                $sql = "UPDATE artic set kgsuni = $kilos WHERE codcli = 176 and codart = '$artic->codart'";
+                //$ctsql = Ctsql::ctsqlImport($sql);
+                //var_dump($ctsql);
+            }
+        }
+    }
+
+    public function getStockToys() {
+        $sql = "SELECT * FROM artic where codcli = 176";
+        $result = Ctsql::ctsqlExport($sql);
+        echo $result[0]."<br><br>";
+    }
+
+    public function getTestSibari() {
+        $query = "SELECT * from linalbar where codcli = 170 and codart = '2041000250'";
+        $result = Ctsql::ctsqlExport($query);
+        $result = json_decode($result[0]);
+        dd($result);
+    }
 }
+

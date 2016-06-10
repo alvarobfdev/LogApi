@@ -346,21 +346,51 @@
 
         function finalizarEdi() {
 
+            /*
             $("button").prop("disabled", true);
             $("#addToPalet").text("Exportando...");
-            $.getJSON('{{url('app/edi/finish-export-edi')}}', {
+            $.post('{{url('app/edi/finish-export-edi')}}', {
                 'albaran': JSON.stringify(albaran),
                 'palets':JSON.stringify(palets),
                 'tipoPalets':JSON.stringify(tipoPalets),
                 'tiendasList':JSON.stringify(tiendasList),
                 'lineas':JSON.stringify(lin_albaran),
                 'bultosCapas':JSON.stringify(bultosCapas),
-                'modify':modify
+                'modify':modify,
+                '_token':'{{ csrf_token() }}'
 
             }, function() {
                 alert("Fichero exportado con éxito!");
                 window.location.reload();
-            }).error(function() {
+            }, "json").error(function() {
+                alert("Fallo al exportar fichero. Consulte a un técnico");
+            });
+            */
+
+            var request = $.ajax({
+                url: '{{url('app/edi/finish-export-edi')}}',
+                type: 'post',
+                data: {
+                    'albaran': JSON.stringify(albaran),
+                    'palets':JSON.stringify(palets),
+                    'tipoPalets':JSON.stringify(tipoPalets),
+                    'tiendasList':JSON.stringify(tiendasList),
+                    'lineas':JSON.stringify(lin_albaran),
+                    'bultosCapas':JSON.stringify(bultosCapas),
+                    'modify':modify,
+                },
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',   //If your header name has spaces or any other char not appropriate
+                },
+                dataType: 'json'
+            });
+
+            request.done(function() {
+                alert("Fichero exportado con éxito!");
+                //window.location.reload();
+            });
+
+            request.fail(function() {
                 alert("Fallo al exportar fichero. Consulte a un técnico");
             });
         }

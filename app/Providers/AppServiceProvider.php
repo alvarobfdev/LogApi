@@ -19,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
     {
 
         \Validator::extend('unique_pedido', function($attribute, $value, $parameters, $validator) {
+            
             $data = $validator->getData();
             $tipped = $data["tipped"];
             $user = \Session::get("user");

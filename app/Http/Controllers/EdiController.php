@@ -34,10 +34,10 @@ class EdiController extends Controller
 
     private $productsNotFound = [];
 
-    public function getAlbaranPdf($numcli, $numalb, $html = null) {
+    public function getAlbaranPdf($numcli, $ejerci, $numalb, $html = null) {
 
 
-        $data["albaran"] = AlbaranFisicoEdi::where("codcli", $numcli)->where("num_albaran", $numalb)->first();
+        $data["albaran"] = AlbaranFisicoEdi::where("codcli", $numcli)->where("num_albaran", $numalb)->where("ejerci", $ejerci)->first();
         $data["lineas"] = AlbaranLineasFisicoEdi::where("codcli", $numcli)->where("num_albaran", $numalb)->get();
 
 
@@ -85,7 +85,7 @@ class EdiController extends Controller
 
     }
 
-    public function getFinishExportEdi() {
+    public function postFinishExportEdi() {
 
         
         $palets = \Request::get("palets");
@@ -261,6 +261,21 @@ class EdiController extends Controller
 
         $clienteEdi = EdiClientes::where("cod_interno", $albaran->codcli)->where("cliente_logival", 1)->first();
         $entrageEdi = EdiClientes::where("ean", $albaranEdi->receptor)->first();
+        $pideEdi = EdiClientes::where("ean", $albaranEdi->comprador)->first();
+
+        $lineas = AlbaranEdiLineas::where("codcli", $albaranEdi->codcli)
+            ->where("ejerci", $albaranEdi->ejerci)
+            ->where("numalb", $albaranEdi->numalb)->get();
+
+        $numBultos = 0;
+        foreach($lineas as $linea) {
+            $numBultos += $linea->bultos;
+        }
+
+        $numPalets = AlbaranEdiPalets::where("codcli", $albaranEdi->codcli)
+            ->where("ejerci", $albaranEdi->ejerci)
+            ->where("numalb", $albaranEdi->numalb)->count();
+
         if($albaranEdi->comprador == "8480010023213")
             $albaranFisico->codcli_proveedor = $clienteEdi->cod_eroski;
 
@@ -282,6 +297,16 @@ class EdiController extends Controller
         $albaranFisico->cp_entrega = $entrageEdi->cp;
         $albaranFisico->provincia_entrega = $entrageEdi->provincia;
         $albaranFisico->poblacion_entrega = $entrageEdi->poblacion;
+        $albaranFisico->codigo_pide = $pideEdi->cod_interno;
+        $albaranFisico->nombre_pide = $pideEdi->nombre;
+        $albaranFisico->direccion_pide = $pideEdi->direccion;
+        $albaranFisico->cp_pide = $pideEdi->cp;
+        $albaranFisico->provincia_pide = $pideEdi->provincia;
+        $albaranFisico->poblacion_pide = $pideEdi->poblacion;
+        $albaranFisico->depto_compra = $albaranEdi->departamento;
+        $albaranFisico->logo_proveedor = $clienteEdi->logo;
+        $albaranFisico->num_bultos = $numBultos;
+        $albaranFisico->num_palets = $numPalets;
         $albaranFisico->save();
 
         $this->createLineasAlbaranFisico($albaran, $lineasArr);
@@ -389,7 +414,8 @@ class EdiController extends Controller
                         $embCaja->addAttribute("TIPEMB", "CT");
                         $embCaja->addAttribute("FORMATO", $caja->formato);
                         $numFormatos = $this->getNumFormatos($albaranEdiLin, $albaranEdiCajas, $caja, $palet);
-                        $embCaja->addAttribute("NUMFORMATO", $numFormatos);
+                        if($numFormatos > 0)
+                            $embCaja->addAttribute("NUMFORMATO", $numFormatos);
                         $embCaja->addAttribute("UMEDIDA", "PCE");
                         if($caja->formato == "201" || $caja->formato == "200") {
                             $bultform = $cantemb;
@@ -425,7 +451,8 @@ class EdiController extends Controller
                                 $lin->addAttribute("NUMPED", $albaranEdi->pedido_ref);
                                 $linPedido = EdiLinped::where("refean", $linea->ean)->where("cabped_id", $pedidoEdi->id)->first();
                                 $lin->addAttribute("NUMLINPED", $linPedido->clave2);
-                                $lin->addAttribute("LOTE", "LOT001");
+
+                                $lin->addAttribute("LOTE", $linea->lote);
                                 $lin->addAttribute("PROPMERC", $albaranEdi->proveedor);
 
 
@@ -581,6 +608,9 @@ class EdiController extends Controller
                 $palets[$linea->idpalet] = 1;
                 foreach($cajasAlbaran as $cajaAlbaran) {
                     if($cajaAlbaran->idpalet == $linea->idpalet && $linea->idcaja == $cajaAlbaran->idcaja) {
+                        if($cajaAlbaran->bultosCapas == 0) {
+                            return 0;
+                        }
                         $capas += ceil($cajaAlbaran->cantidad / $cajaAlbaran->bultosCapas);
                     }
                 }
@@ -634,7 +664,8 @@ class EdiController extends Controller
 
         if(!self::$sscc) {
             $ssccCaja = \DB::connection('mysql')->table("albaran_edi_cajas")->select(\DB::connection('mysql')->raw("MAX(SUBSTRING(sscc, 1, CHAR_LENGTH(sscc) - 1)) AS sscc_no_digit"), "cantidad")->where("codcli", $codcli)->first();
-            if($ssccCaja) {
+
+            if($ssccCaja->sscc_no_digit) {
                 $nextSccc = $ssccCaja->sscc_no_digit + $ssccCaja->cantidad;
             }
 
@@ -933,6 +964,17 @@ class EdiController extends Controller
         }
 
         $comprador = EdiClientes::where("ean", $cabped->comprador)->first();
+
+        if(!$comprador) {
+
+            $linsPed = EdiLinped::where("cabped_id", $cabped->id)->get();
+            foreach($linsPed as $linPed) {
+                $linPed->delete();
+            }
+            $cabped->delete();
+            die("NO EXISTE COMPRADOR");
+        }
+
         $eanComprador = $comprador->ean;
 
         $cabped->pedido_base = $numped;

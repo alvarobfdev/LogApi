@@ -31,18 +31,19 @@ Route::group(['prefix'=> '/api/v1', 'middleware' => ['api']], function () {
     Route::resource('/pedidos', 'RestApi\PedidoController');
 });
 
+Route::controller('/app/edi', 'EdiController');
+
 
 Route::group(['middleware' => ['web']], function () {
-    Route::controller('/app/edi', 'EdiController');
     Route::controller('/app/dasanci', 'DasanciController');
     Route::controller('/app/expediciones', 'ExpedicionesController');
     Route::controller('/app/clientes', 'ClienteController');
     Route::controller('/app', 'AppController');
     Route::controller('/barcode', 'BarcodeController');
     Route::controller('/amazon-mws', 'AmazonMWSController');
-
-
 });
+
+
 
 
 

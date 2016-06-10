@@ -122,7 +122,6 @@
             margin-top: 1mm;
         }
         .albaran-data>table td{
-            width: 33%;
             border: 1px solid black;
             padding: 1mm;
         }
@@ -217,20 +216,30 @@
                 <table width="100%">
                     <thead>
                         <tr>
-                            <td>Pedido</td>
-                            <td>Fecha entrega</td>
-                            <td>Lugar de entrega</td>
+                            <td width="15%">Pedido</td>
+                            <td width="15%">Fecha entrega</td>
+                            <td width="5%">Total bultos</td>
+                            <td width="5%">Total palets</td>
+                            <td width="30%">Lugar de entrega</td>
+                            <td width="30%">Sucursal destino</td>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td><?=$albaran->num_pedido_cliente?></td>
                             <td><?=\Carbon\Carbon::parse($albaran->fecha_entrega)->format("d/m/Y")?></td>
+                            <td><?=$albaran->num_bultos?></td>
+                            <td><?=$albaran->num_palets?></td>
                             <td>
                                 <?=$albaran->codigo_entrega?> <?=$albaran->nombre_entrega?><br>
                                 <?=$albaran->direccion_entrega?><br>
                                 <?=$albaran->cp_entrega?> <?=$albaran->poblacion_entrega?> - <?=$albaran->provincia_entrega?>
 
+                            </td>
+                            <td>
+                                <?=$albaran->codigo_pide?> <?=$albaran->nombre_pide?> (Dpto. <?=$albaran->depto_compra?>)<br>
+                                <?=$albaran->direccion_pide?><br>
+                                <?=$albaran->cp_pide?> <?=$albaran->poblacion_pide?> - <?=$albaran->provincia_pide?><br>
                             </td>
                         </tr>
                     </tbody>

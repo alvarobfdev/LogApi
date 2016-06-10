@@ -7,8 +7,6 @@ use App\RestApiModels\Pedido;
 use App\RestApiModels\User;
 use Illuminate\Http\Request;
 
-use App\Http\Requests;
-
 class PedidoController extends Controller
 {
 
@@ -19,29 +17,31 @@ class PedidoController extends Controller
      */
     public function index(Request $request)
     {
-        $user = \Session::get("user");
+        $response = parent::index($request);
 
-        $validator = \Validator::make($request->all(), Pedido::$validationFilters);
+        if($response) {
+            return $response;
+        }
+
+        $validator = \Validator::make($this->filters, Pedido::$validationFilters);
 
         if($validator->fails()) {
             $response['errors'] = $validator->errors();
             return response(json_encode($response), 405);
         }
 
+        $user = \Session::get("user");
         $pedidos = Pedido::where("codcli", $user->codcli);
 
-        foreach(Pedido::$validationFilters as $indexValidation=>$validation) {
-            if($request->has($indexValidation) && $indexValidation != "limit" && $indexValidation != "page") {
-                $pedidos = $pedidos->where($indexValidation, $request->get($indexValidation));
-            }
-        }
+        $validFilters = Pedido::$validationFilters;
+
+        $pedidos = $this->getFilteredBuilder($validFilters, $pedidos);
 
         if($request->has("limit")) {
             $limit = $request->get("limit");
             $this->limitPerPage = ($limit < $this->maxLimit) ? $limit : $this->maxLimit;
         }
-
-        return $pedidos->paginate($this->limitPerPage);
+        return $pedidos->select(Pedido::$showable)->paginate($this->limitPerPage);
     }
 
     /**
@@ -64,6 +64,7 @@ class PedidoController extends Controller
     {
         try {
 
+            $user = \Session::get("user");
 
             if (!$request->has("pedidos")) {
                 return response('Bad Input', 405);
@@ -71,30 +72,36 @@ class PedidoController extends Controller
 
             foreach($request->get("pedidos") as $pedido) {
 
-                $validator = \Validator::make($pedido, Pedido::$validation);
+                if($response = $this->validateInput($pedido, Pedido::$validation)) {
+                    return $response;
+                }
 
-                if($validator->fails()) {
-                    $response['errors'] = $validator->errors();
-                    return response(json_encode($response), 405);
+
+
+                $pedidoDb = $this->fillPedidoDb(new Pedido(), $pedido, Pedido::$validation);
+
+                if($user->isAdmin == 1) {
+
+                    if($response = $this->validateInput($pedido, Pedido::$adminValidation))
+                        return $response;
+
+                    $pedidoDb = $this->fillPedidoDb($pedidoDb, $pedido, Pedido::$adminValidation);
                 }
 
                 foreach($pedido["linped"] as $linea) {
-                    $validator = \Validator::make($linea, LineasPedido::$validation);
 
-                    if($validator->fails()) {
-                        $response['errors'] = $validator->errors();
-                        return response(json_encode($response), 405);
-                    }
+                    if($response = $this->validateInput($linea, LineasPedido::$validation))
+                        return $response;
+
+                    $pedidoDb = $this->fillLineaPedidoDb($pedidoDb, $linea, LineasPedido::$validation);
+
                 }
 
+                $pedidoDb->save();
             }
-
-            return "OK";
-
         }
         catch(\Exception $e) {
-            return response('Internal Server Error.', 500);
-
+            return response('Internal Server Error. '.$e->getMessage(), 500);
         }
     }
 
@@ -106,7 +113,19 @@ class PedidoController extends Controller
      */
     public function show($id)
     {
-        //
+        try {
+            $user = \Session::get("user");
+            $pedido = Pedido::where("codcli", $user->codcli)->where("_id", $id);
+            if ($pedido->count() < 1) {
+                $response['errors'] = ["Wrong id"];
+                return response(json_encode($response), 405);
+            }
+            return $pedido->select(Pedido::$showable)->first();
+        }
+        catch(\Exception $e) {
+            return response('Internal Server Error.', 500);
+        }
+
     }
 
     /**
@@ -129,7 +148,35 @@ class PedidoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        try {
+            $user = \Session::get("user");
+            $pedidoDb = Pedido::where("codcli", $user->codcli)->where("_id", $id);
+            if ($pedidoDb->count() < 1) {
+                $response['errors'] = ["Wrong id"];
+                return response(json_encode($response), 405);
+            }
+
+            if(!$request->has("pedido")) {
+                $response['errors'] = ["Pedido object not found!"];
+                return response(json_encode($response), 405);
+            }
+            $pedido = $request->get("pedido");
+
+
+            $validator = \Validator::make($pedido, Pedido::$validationUpdate);
+            if ($validator->fails()) {
+                $response['errors'] = $validator->errors();
+                return response(json_encode($response), 405);
+            }
+
+
+
+
+
+        }
+        catch(\Exception $e) {
+            return response('Internal Server Error.', 500);
+        }
     }
 
     /**
@@ -142,4 +189,36 @@ class PedidoController extends Controller
     {
         //
     }
+
+    private function fillPedidoDb($pedidoDb, $pedidoRequest, $validation) {
+
+        foreach($pedidoRequest as $index=>$value) {
+            if((array_key_exists($index, $validation) && !is_array($value)) ||
+                $index == "tlfter"
+            ) {
+                $pedidoDb->$index = $value;
+            }
+        }
+
+        return $pedidoDb;
+    }
+
+    private function fillLineaPedidoDb($pedidoDb, $linea, $validation){
+        $lineaDb = new LineasPedido();
+        foreach($linea as $index => $value) {
+
+            if (array_key_exists($index, $validation) && !is_array($value)) {
+                $lineaDb->$index = $value;
+            }
+
+        }
+        $pedidoDb->lineas()->associate($lineaDb);
+
+        return $pedidoDb;
+
+    }
+
+
+
+
 }

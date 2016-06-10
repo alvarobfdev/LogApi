@@ -156,6 +156,10 @@ paths: {
           "description": "Entrada incorrecta"
         }
       }
+    },
+    "get": {
+        "description": "Devuelve pedidos del cliente",
+
     }
   }
 }
