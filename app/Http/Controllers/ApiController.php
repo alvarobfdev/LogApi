@@ -29,7 +29,6 @@ class ApiController extends Controller
     public function postPdfInvoice()
     {
         $data = \Request::get("jsonData");
-        dd($data);
         $data = utf8_encode($data);
         $facturas = json_decode($data, true);
 
@@ -47,7 +46,6 @@ class ApiController extends Controller
         /*Insertamos cada factura en el zip*/
         foreach ($facturas as $factura) {
             $view = $this->viewInvoice($factura);
-            return $view;
             $view = str_replace("localhost:8080", "localhost", $view);
             $pdfContents = \PDF::loadHTML($view)->setPaper('a4')->setOption('margin-right', 0)->setOption('margin-bottom', 0)->setOption('margin-left', 0)->setOption('margin-top', 0)->output();
             $nombreFact = "factura-{$factura['id']['serfac']}-{$factura['id']['ejefac']}-{$factura['id']['numfac']}.pdf";
