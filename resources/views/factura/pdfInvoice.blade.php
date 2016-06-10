@@ -284,7 +284,7 @@ setlocale(LC_MONETARY, 'it_IT.UTF-8');
     <?php $numPags=1; ?>
 @endif
 @while($anotherPage)
-    <?php $anotherPage = false; $pagActual++; echo \App\Factura::LINES_PER_PAGE;   ?>
+    <?php $anotherPage = false; $pagActual++;  ?>
     <page size="A4">
         <div class="cabecera">
             <div class="logo">
