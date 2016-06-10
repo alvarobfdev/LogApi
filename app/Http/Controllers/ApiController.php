@@ -31,7 +31,6 @@ class ApiController extends Controller
         $data = \Request::get("jsonData");
         $data = utf8_encode($data);
         $facturas = json_decode($data, true);
-        dd($facturas);
         //$view = $this->viewInvoice($facturas[0]);
         //return $view;
 
