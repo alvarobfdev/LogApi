@@ -9,7 +9,7 @@ class factura extends Model  {
 
 	protected $table = 'cabfactu';
 	protected $primaryKey = 'id';
-	const LINES_PER_PAGE = 47;
+	const LINES_PER_PAGE = 45;
 
 
 	public function __construct() {
