@@ -62,8 +62,8 @@ class EdiController extends Controller
     }
 
     public function getCheckNewOrders() {
-        //$files = \File::files("/ASPEDI/PRODUCCION/ENTRADA");
-        $files = \File::files(storage_path("app/tmp"));
+        $files = \File::files("/ASPEDI/PRODUCCION/ENTRADA");
+        //$files = \File::files(storage_path("app/tmp"));
         foreach($files as $file) {
             if($this->isXml($file)) {
                 $pedido = $this->getOrderObject($file);
@@ -484,8 +484,8 @@ class EdiController extends Controller
         $dom->formatOutput = TRUE;
         $formatted = $dom->saveXML();
         $datetime = Carbon::create()->format("Ymdhis");
-        //file_put_contents("/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml", $formatted);
-        file_put_contents(storage_path("app/tmp/").$datetime.".xml", $formatted);
+        file_put_contents("/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml", $formatted);
+        //file_put_contents(storage_path("app/tmp/").$datetime.".xml", $formatted);
         exec("cd /ASPEDI && ./enviar_a_ediwin_asp.sh", $output);
     }
 
