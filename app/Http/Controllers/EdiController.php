@@ -69,7 +69,7 @@ class EdiController extends Controller
                 $pedido = $this->getOrderObject($file);
                 $this->savePedido($pedido);
                 $fileName = basename($file);
-                \File::move($file, "/ASPEDI/PRODUCCION/ENTRADA/COPIAS/".$fileName);
+                //\File::move($file, "/ASPEDI/PRODUCCION/ENTRADA/COPIAS/".$fileName);
             }
         }
     }
