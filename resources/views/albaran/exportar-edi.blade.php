@@ -55,7 +55,7 @@
             </div>
         </div>
 
-        <div id="capaMontarPalets" style="display: none;" class="col-md-6">
+        <div id="capaMontarPalets" style="display: none;" class="col-md-6 col-sm-6">
 
             <div class="form-group">
                 <label class="col-md-6 control-label">Línea:</label>
@@ -124,7 +124,7 @@
             </div>
         </div>
 
-        <div id="capaVisorPalets" style="display: none;" class="col-md-6">
+        <div id="capaVisorPalets" style="display: none;" class="col-md-6 col-sm-6">
 
         </div>
 
