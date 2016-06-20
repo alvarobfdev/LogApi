@@ -35,10 +35,12 @@
 
 #capaVisorPalets input {
     height: 20px;
+    max-width: 40px;
 }
 
 #capaVisorPalets .btn {
     padding: 4px;
+    font-size: 10px;
 }
 
 @media (min-width: 768px) {
