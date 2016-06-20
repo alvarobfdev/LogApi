@@ -60,7 +60,13 @@
             <div class="form-group">
                 <label class="col-md-6 control-label">Línea:</label>
                 <div class="col-md-6">
-                    <span class="form-control" id="lineaAlbaran" style="height: inherit;"></span>
+                    <div class="col-md-10 no-padding">
+                        <span class="form-control" id="lineaAlbaran" style="height: inherit;"></span>
+                    </div>
+                    <div class="col-md-2 no-padding">
+                        <img id="lineUp" style="width: 25px; cursor:pointer; " src="{{url('/logival/img/arrow-up-2.png')}}"><br><br>
+                        <img id="lineDown" style="width: 25px; cursor: pointer;" src="{{url('/logival/img/arrow-down-2.png')}}">
+                    </div>
                 </div>
             </div>
 
@@ -126,6 +132,18 @@
 </form>
     @section('scripts')
     <script>
+
+        String.prototype.hashCode = function() {
+            var hash = 0, i, chr, len;
+            if (this.length === 0) return hash;
+            for (i = 0, len = this.length; i < len; i++) {
+                chr   = this.charCodeAt(i);
+                hash  = ((hash << 5) - hash) + chr;
+                hash |= 0; // Convert to 32bit integer
+            }
+            return hash;
+        };
+
         var formType = 'start';
         var albaran = null;
         var lin_albaran = null;
@@ -135,12 +153,48 @@
         var palets = [];
         var bultosCapas = [];
         var tipoPalets = [];
-        var tiendasList = []
+        var tiendasList = [];
+        var locs = [];
         var tiendas = true;
         var modify = false;
+        var local_storage = {};
+        var num_albaran = null;
+        var ejercicio = null;
+        var cliente = null;
+        var datastring;
 
         $(function() {
             //startAlbaran($('form'));
+
+            $('body').on('change', '#numTienda', function(e) {
+
+                manejarLinea(selectedLinea);
+
+            });
+
+            $('body').on('click', '#lineUp', function(e) {
+
+                if(selectedLinea > 0) {
+                    manejarLinea(selectedLinea-1);
+                }
+            });
+
+            $('body').on('click', '#lineDown', function(e) {
+                if(selectedLinea < lin_albaran.length-1) {
+                    manejarLinea(selectedLinea+1);
+                }
+            });
+
+            $('body').on('click', '#resetLocal', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var response = confirm("¿Quieres borrar los datos locales?");
+
+                if (response == true) {
+                    localStorage.removeItem("temp_data");
+                    window.location.href = '{{url("/app/edi/exportar-edi")}}';
+                }
+            });
 
             $('body').on('click', '.modificarCantidad', function(e) {
                 e.preventDefault();
@@ -197,15 +251,27 @@
             $("#comenzar").text("Comenzar");
         }
         function startAlbaran(form) {
-            var datastring = form.serialize();
+            datastring = form.serialize();
+
             form.find("#comenzar").prop("disabled", true);
             form.find("#comenzar").text("Obteniendo albarán...");
 
             $.getJSON('{{url('app/edi/albaran-for-edi')}}', datastring, function(result) {
+
+                ejercicio = $('#ejercicio').val();
+                cliente = $('#numCliente').val();
+                num_albaran = $('#numAlbaran').val();
+
                 var json = result;
 
                 if(json.success == false) {
-                    alert("Ha habido un fallo al obtener los datos!");
+
+                    if(json.hasOwnProperty('error')) {
+                        alert(json.error);
+
+                    }
+                    else alert("Ha habido un fallo al obtener los datos!");
+
                     resetButton();
                     return;
                 }
@@ -215,7 +281,43 @@
                     return;
                 }
 
-                if(json.modify) {
+                var temp = localStorage.getItem("temp_data");
+
+
+                if(temp !== undefined && temp != null) {
+                    var hash = datastring.hashCode();
+                    temp = JSON.parse(temp);
+                    if(temp.hash == hash) {
+                        albaran = temp.albaran;
+                        lin_albaran = temp.lineas;
+                        products = json.data.products;
+                        locs = json.data.locs;
+                        tipoPalets = temp.tipoPalets;
+                        tiendasList = temp.tiendasList;
+
+
+                        if (tiendasList.length == 0) {
+                            tiendas = false;
+                        }
+
+                        construirPalets();
+                        palets = temp.palets;
+                        bultosCapas = temp.bultosCapas;
+
+
+                        $('#capaBusquedaAlbaran').hide();
+                        $('#capaMontarPalets').show();
+                        $('#capaVisorPalets').show();
+
+                        manejarLinea(0);
+                        reloadVisorPalets();
+                        formType = 'addToPalet';
+
+                        return;
+                    }
+                }
+
+                if (json.modify) {
                     albaran = json.data.albaran;
                     lin_albaran = json.data.lin_albaran;
                     products = json.data.products;
@@ -224,7 +326,8 @@
                     tipoPalets = json.data.tipoPalets;
                     tiendasList = json.data.tiendasList;
 
-                    if(tiendasList.length == 0) {
+
+                    if (tiendasList.length == 0) {
                         tiendas = false;
                     }
 
@@ -235,18 +338,17 @@
                     bultosCapas = json.data.bultosCapas;
 
 
-
-
                     $('#capaBusquedaAlbaran').hide();
                     $('#capaMontarPalets').show();
                     $('#capaVisorPalets').show();
 
                     manejarLinea(0);
                     reloadVisorPalets();
+                    $('#addToPalet').after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+cliente+'/'+ejercicio+'/'+num_albaran+'" class="btn btn-primary">Albarán físico</a>');
                     return;
                 }
 
-                if(json.data.albaran.totpal < 1) {
+                if (json.data.albaran.totpal < 1) {
                     alert("No se han asignado palets a este albarán!");
                     resetButton();
                     return;
@@ -256,8 +358,9 @@
                 lin_albaran = json.data.lin_albaran;
                 products = json.data.products;
                 tiendasList = json.data.tiendasList;
+                locs = json.data.locs;
 
-                if(tiendasList.length == 0) {
+                if (tiendasList.length == 0) {
                     tiendas = false;
                 }
 
@@ -270,6 +373,7 @@
                 var err = jqxhr.status + ", " + error;
                 alert("Error: "+err+".\nComprobar conexión de las máquinas.");
             });
+
         }
 
         function buildFormPalet(form) {
@@ -336,12 +440,46 @@
 
                 $('#numBultos').prop("max", maxBultos);
                 $('#numBultos').val(maxBultos);
+
+                if(tiendas == true) {
+                    var articulo = getCurrentArticle();
+                    var idTienda = $('#numTienda').val();
+                    var tienda = tiendasList[idTienda];
+                    var loc = getCurrentLoc(articulo, tienda);
+                    var cantidad = 0;
+                    if(loc != null) {
+                        var udsBulto = lin_albaran[selectedLinea].cantid / lin_albaran[selectedLinea].bultos;
+                        cantidad = loc.cantidad / udsBulto;
+                    }
+
+                    $('#numBultos').prop("max", cantidad);
+                    $('#numBultos').val(cantidad);
+
+
+
+                }
             }
             else {
-                formType = "endEdi";
-                $('#addToPalet').text("Finalizar exportación");
-                $('#lineaAlbaran').text("");
+                var nextNotEmptyLine = getNextNotEmptyLine();
+                if(nextNotEmptyLine == -1) {
+                    formType = "endEdi";
+                    $('#addToPalet').text("Finalizar exportación");
+                    $('#lineaAlbaran').text("");
+                }
+                else {
+                    manejarLinea(nextNotEmptyLine);
+                }
             }
+
+        }
+
+        function getNextNotEmptyLine() {
+            for(var i=0; i<lin_albaran.length; i++) {
+                if(lin_albaran[i].bultosRestantes > 0) {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         function finalizarEdi() {
@@ -367,6 +505,9 @@
             });
             */
 
+            $('#addToPalet').text("Exportando EDI...")
+            $('#addToPalet').addClass("disabled");
+
             var request = $.ajax({
                 url: '{{url('app/edi/finish-export-edi')}}',
                 type: 'post',
@@ -387,15 +528,39 @@
 
             request.done(function() {
                 alert("Fichero exportado con éxito!");
+                $('#addToPalet').text("Fichero exportado!");
+                $('#addToPalet').after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+cliente+'/'+ejercicio+'/'+num_albaran+'" class="btn btn-primary">Albarán físico</a>');
+                localStorage.removeItem("temp_data");
                 //window.location.reload();
             });
 
             request.fail(function() {
                 alert("Fallo al exportar fichero. Consulte a un técnico");
+                $('#addToPalet').text("Finalizar exportación");
+                $('#addToPalet').removeClass("disabled");
+
             });
         }
 
 
+        function getCurrentArticle() {
+            for(var i=0; i < products.length; i++) {
+                codart = lin_albaran[selectedLinea].codart;
+                if(products[i].codart == codart) {
+                    return products[i];
+                }
+            }
+            return null;
+        }
+
+        function getCurrentLoc(articulo, tienda) {
+            for(var i=0; i<locs.length; i++) {
+                if(locs[i].prod == articulo.codbar && locs[i].lugar == tienda.ean) {
+                    return locs[i];
+                }
+            }
+            return null;
+        }
 
 
         function addToPalet() {
@@ -426,6 +591,9 @@
 
             lin_albaran[selectedLinea].bultosRestantes = maxBultos - numBultos;
 
+            saveToLocal();
+
+
             if(numBultos < maxBultos) {
                 manejarLinea(selectedLinea);
             }
@@ -433,6 +601,20 @@
             else {
                 manejarLinea(selectedLinea+1)
             }
+        }
+
+        function saveToLocal() {
+
+            var hash = datastring.hashCode();
+
+            local_storage.hash = hash;
+            local_storage.albaran = albaran;
+            local_storage.palets = palets;
+            local_storage.tipoPalets = tipoPalets;
+            local_storage.tiendasList = tiendasList;
+            local_storage.lineas = lin_albaran;
+            local_storage.bultosCapas = bultosCapas;
+            localStorage.setItem("temp_data", JSON.stringify(local_storage));
         }
 
         function reloadVisorPalets() {
@@ -494,8 +676,12 @@
                     }
                 });
                 html += '</div>';
+
                 $('#capaVisorPalets').append(html);
             }
+
+            $('#capaVisorPalets').append('<br><button id="resetLocal" class="btn btn-danger">Resetear</button>');
+
         }
 
 

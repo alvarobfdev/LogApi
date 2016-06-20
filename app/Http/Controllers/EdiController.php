@@ -570,12 +570,30 @@ class EdiController extends Controller
 
         $result["data"]["tiendasList"] = array();
 
+        $faltanTiendas = array();
+
         foreach($tiendas as $tienda) {
 
             $tiendaEdi = EdiClientes::where("ean", $tienda->lugar)->first();
+            if(!$tiendaEdi) {
+                $faltanTiendas[] = $tienda->lugar;
+            }
             $result["data"]["tiendasList"][] = $tiendaEdi;
+
         }
 
+        $locs = EdiLoclped::where("cabped_id", $pedidoEdi->id)->get();
+
+        foreach($locs as &$loc) {
+            $linped = EdiLinped::where("cabped_id", $pedidoEdi->id)->where("clave2", $loc->clave2)->first();
+            $loc->prod = $linped->refean;
+        }
+
+        if(count($faltanTiendas) > 0) {
+            $result["success"] = false;
+            $result["error"] = "Faltan las siguientes tiendas en el sistema:\n".implode("\n", $faltanTiendas);
+            return $result;
+        }
 
 
         $result["success"] = true;
@@ -583,6 +601,7 @@ class EdiController extends Controller
         $result["data"]["albaran"] = $albaran;
         $result["data"]["lin_albaran"] = $linAlbaran;
         $result["data"]["products"] = $products;
+        $result["data"]["locs"] = $locs;
         //$result["data"]["bultos"] = $bultos;
 
         $result["data"]["numCamiones"] = $camiones;
@@ -1143,6 +1162,26 @@ class EdiController extends Controller
             }
         }
         return false;
+    }
+
+
+    public function getCheckTiendas() {
+        $tiendasUnreg = [];
+        $localizaciones = EdiLoclped::all();
+
+        foreach($localizaciones as $localizacion) {
+            $tienda = EdiClientes::where("ean", $localizacion->lugar)->first();
+            if(!$tienda) {
+                $tiendasUnreg[$localizacion->lugar] = "NULO";
+            }
+        }
+
+        foreach($tiendasUnreg as $ean => $value) {
+            echo $ean."<br>";
+        }
+
+
+
     }
 
 }

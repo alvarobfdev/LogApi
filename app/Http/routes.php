@@ -29,6 +29,8 @@ Route::get('/', function () {
 Route::group(['prefix'=> '/api/v1', 'middleware' => ['api']], function () {
     Route::resource('/user', 'RestApi\UserController');
     Route::resource('/pedidos', 'RestApi\PedidoController');
+    Route::resource('/articulos', 'RestApi\ArticuloController');
+
 });
 
 Route::controller('/app/edi', 'EdiController');

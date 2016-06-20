@@ -88,8 +88,8 @@ class Controller extends \App\Http\Controllers\Controller
     }
 
 
-    protected function validateInput($input, $validationArray) {
-        $validator = \Validator::make($input, $validationArray);
+    protected function validateInput($input, $validationArray, $customAttr = array()) {
+        $validator = \Validator::make($input, $validationArray, array(), $customAttr);
 
         if($validator->fails()) {
             $response['errors'] = $validator->errors();

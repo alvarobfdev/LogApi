@@ -78,6 +78,8 @@ return [
     'url'                  => 'The :attribute format is invalid.',
 
     'unique_pedido'         => 'The :attribute code is not unique',
+    'exist_articulo'         => 'The :attribute not exist',
+
 
     /*
     |--------------------------------------------------------------------------
