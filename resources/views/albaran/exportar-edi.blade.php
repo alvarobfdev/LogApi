@@ -441,7 +441,9 @@
                 $('#numBultos').prop("max", maxBultos);
                 $('#numBultos').val(maxBultos);
 
-                if(tiendas == true) {
+
+                if(tiendas == true && modify == false) {
+
                     var articulo = getCurrentArticle();
                     var idTienda = $('#numTienda').val();
                     var tienda = tiendasList[idTienda];
@@ -591,7 +593,8 @@
 
             lin_albaran[selectedLinea].bultosRestantes = maxBultos - numBultos;
 
-            saveToLocal();
+            if(modify == false)
+                saveToLocal();
 
 
             if(numBultos < maxBultos) {
