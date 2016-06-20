@@ -60,12 +60,12 @@
             <div class="form-group">
                 <label class="col-md-6 control-label">Línea:</label>
                 <div class="col-md-6">
-                    <div class="col-md-10 no-padding">
+                    <div class="col-md-10 col-sm-10 no-padding">
                         <span class="form-control" id="lineaAlbaran" style="height: inherit;"></span>
                     </div>
-                    <div class="col-md-2 no-padding">
-                        <img id="lineUp" style="width: 25px; cursor:pointer; " src="{{url('/logival/img/arrow-up-2.png')}}"><br><br>
-                        <img id="lineDown" style="width: 25px; cursor: pointer;" src="{{url('/logival/img/arrow-down-2.png')}}">
+                    <div class="col-md-2 col-sm-2 no-padding">
+                        <img id="lineUp" style="max-width: 100%; cursor:pointer; " src="{{url('/logival/img/arrow-up-2.png')}}"><br><br>
+                        <img id="lineDown" style="max-width: 100%; cursor: pointer;" src="{{url('/logival/img/arrow-down-2.png')}}">
                     </div>
                 </div>
             </div>
