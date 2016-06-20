@@ -64,8 +64,8 @@
                         <span class="form-control" id="lineaAlbaran" style="height: inherit;"></span>
                     </div>
                     <div class="col-md-2 col-sm-2 no-padding">
-                        <img id="lineUp" style="max-width: 100%; cursor:pointer; " src="{{url('/logival/img/arrow-up-2.png')}}"><br><br>
-                        <img id="lineDown" style="max-width: 100%; cursor: pointer;" src="{{url('/logival/img/arrow-down-2.png')}}">
+                        <img id="lineUp" style="max-width: 50%; cursor:pointer; " src="{{url('/logival/img/arrow-up-2.png')}}"><br><br>
+                        <img id="lineDown" style="max-width: 50%; cursor: pointer;" src="{{url('/logival/img/arrow-down-2.png')}}">
                     </div>
                 </div>
             </div>
