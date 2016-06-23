@@ -38,7 +38,11 @@ class WoocommerceApi
     {
         $me = self::getInstance();
         $url = $me->getEncodedUrl("GET", "products", $params);
-        $respone = file_get_contents($url);
+        $respone = @file_get_contents($url);
+        if($respone === FALSE) {
+            var_dump($url);
+            var_dump($respone);
+        }
         $products = json_decode($respone);
         return $products;
     }
@@ -138,7 +142,6 @@ class WoocommerceApi
         foreach($extraParams as $index=>$param) {
             $params[$index] = $param;
         }
-
 
         $consumerSecret = self::$CONSUMER_SECRET;
 

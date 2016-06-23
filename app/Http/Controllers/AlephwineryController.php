@@ -22,9 +22,9 @@ class AlephwineryController extends Controller
 
     public function __construct()
     {
-        WoocommerceApi::$CONSUMER_KEY = "ck_7a2d61bd38000bac584feacf2636dcf27725a16c";
-        WoocommerceApi::$CONSUMER_SECRET = "cs_fcb19a187a3c5977c835020c2ace3781e55bd89c";
-        WoocommerceApi::$HOST = "http://www.alephwinery.com";
+        WoocommerceApi::$CONSUMER_KEY = "ck_833ddc8f1c911b212d2199eaebcb2243230a9e14";
+        WoocommerceApi::$CONSUMER_SECRET = "cs_f840fa920f6f286e0dcf84a4aabae2c53ed434c0";
+        WoocommerceApi::$HOST = "http://alephwinery.com";
     }
 
 
@@ -577,6 +577,15 @@ class AlephwineryController extends Controller
         $orderDB->updated_at = $updatedAt;
         $orderDB->created_at = $createdAt;
         return $orderDB;
+    }
+
+    public function getProducts() {
+        $products = WoocommerceApi::getInstance()->getProducts();
+        dd($products);
+    }
+
+    public function getSyncStock() {
+        $this->syncAllStock();
     }
 
 
