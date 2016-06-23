@@ -58,7 +58,7 @@ class EdiController extends Controller
     }
 
     public function getExportarEdi() {
-        return view("albaran.exportar-edi");
+        return view("albaran.exportar-edi-tmp");
     }
 
     public function getCheckNewOrders() {
@@ -497,7 +497,6 @@ class EdiController extends Controller
 
     public function getAlbaranForEdi() {
 
-
         $in = \Request::all();
         $ejercicio = $in["ejercicio"];
         $cliente = $in["numCliente"];
@@ -563,9 +562,15 @@ class EdiController extends Controller
         foreach($linAlbaran as &$lin) {
             $linEdi = EdiLinped::where("cabped_id", $pedidoEdi->id)->where("refcli", $lin->codart)->first();
             $lin->formato = $linEdi->formato;
+            $lin->udsbul = $lin->cantid / $lin->bultos;
+
         }
 
-        $tiendas = EdiLoclped::distinct()->select('lugar')->where("cabped_id", $pedidoEdi->id)->get();
+
+        $tiendas = \DB::connection("mysql")->select( \DB::raw("select loc.* from edi_loclped loc
+            inner join edi_clientes cli on loc.lugar = cli.ean  where loc.cabped_id = {$pedidoEdi->id} group by lugar order by cli.cod_interno asc
+         ") );
+
 
 
         $result["data"]["tiendasList"] = array();
@@ -578,6 +583,8 @@ class EdiController extends Controller
             if(!$tiendaEdi) {
                 $faltanTiendas[] = $tienda->lugar;
             }
+
+
             $result["data"]["tiendasList"][] = $tiendaEdi;
 
         }
@@ -587,6 +594,7 @@ class EdiController extends Controller
         foreach($locs as &$loc) {
             $linped = EdiLinped::where("cabped_id", $pedidoEdi->id)->where("clave2", $loc->clave2)->first();
             $loc->prod = $linped->refean;
+            $loc->codart = $this->getCodigoArticulo($linped->refean, $products);
         }
 
         if(count($faltanTiendas) > 0) {
@@ -610,6 +618,18 @@ class EdiController extends Controller
 
         return $result;
     }
+
+    private function getCodigoArticulo($ean, $products) {
+        foreach($products as $product) {
+            if($product->codbar == $ean) {
+                return $product->codart;
+            }
+        }
+
+        return "";
+    }
+
+
 
     private function getNumFormatos($linAlbaran, $cajasAlbaran, $caja, $palet) {
 

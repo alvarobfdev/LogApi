@@ -14,14 +14,22 @@ use App\EcommerceOrders;
 use App\WoocommerceApi;
 use Carbon\Carbon;
 
-class DasanciController extends Controller
+class AlephwineryController extends Controller
 {
 
     private $linesError = array();
     private $skipAlbaran = array();
 
+    public function __construct()
+    {
+        WoocommerceApi::$CONSUMER_KEY = "ck_7a2d61bd38000bac584feacf2636dcf27725a16c";
+        WoocommerceApi::$CONSUMER_SECRET = "cs_fcb19a187a3c5977c835020c2ace3781e55bd89c";
+        WoocommerceApi::$HOST = "http://www.alephwinery.com";
+    }
+
+
     public function getSyncNewOrders() {
-        $max_updated_at = EcommerceOrders::where("cliente_id", 158)->max("updated_at");
+        $max_updated_at = EcommerceOrders::where("cliente_id", 174)->max("updated_at");
         if(!$max_updated_at) {
             $max_updated_at = "1979-01-01 00:00:00";
         }
@@ -37,7 +45,7 @@ class DasanciController extends Controller
 
     public function getSyncAllOrders() {
         $orders = WoocommerceApi::getOrders();
-        EcommerceOrders::where("cliente_id", 158)->delete();
+        EcommerceOrders::where("cliente_id", 174)->delete();
 
         foreach($orders->orders as $order) {
 
@@ -104,12 +112,12 @@ class DasanciController extends Controller
     }
 
     private function getStockPendienteServir($codart) {
-        $orders = EcommerceOrders::where("cliente_id", 158)->where("status", "processing")->get();
+        $orders = EcommerceOrders::where("cliente_id", 174)->where("status", "processing")->get();
         $cantidad = 0;
         foreach($orders as $order) {
             $orderNumber = $order->order_number;
             $ejercicio = Carbon::createFromFormat('Y-m-d H:i:s', $order->created_at)->year;
-            $query = "SELECT * FROM linpedidos WHERE codemp=1 AND coddel=1 AND codcli=158 AND tipped='S'
+            $query = "SELECT * FROM linpedidos WHERE codemp=1 AND coddel=1 AND codcli=174 AND tipped='S'
                       AND serped = 'WB' AND ejeped = $ejercicio AND numped = $orderNumber AND codart = '$codart'";
 
             $linpedidos = Ctsql::ctsqlExport($query);
@@ -134,7 +142,7 @@ class DasanciController extends Controller
         $orderMulti = Ctsql::ctsqlExport("SELECT * FROM pedidos WHERE
           codemp=1 AND
           coddel=1 AND
-          codcli=158 AND
+          codcli=174 AND
           serped = 'WB' AND
           tipped = 'S' AND
           ejeped = $ejercicio AND
@@ -164,13 +172,13 @@ class DasanciController extends Controller
     }
 
     private function getAlmacenProducts() {
-        $productosAlmacen = Ctsql::ctsqlExport("SELECT * FROM artic where codemp=1 AND (codcli=158 or codcli=1580)");
+        $productosAlmacen = Ctsql::ctsqlExport("SELECT * FROM artic where codemp=1 AND codcli=174");
         $productosAlmacen = json_decode($productosAlmacen[0]);
         return $productosAlmacen->data;
     }
 
     private function getStockAlmacen() {
-        $stock = Ctsql::ctsqlExport("SELECT * FROM ocupalmac where codcli = 158 and codemp = 1 and coddel=1");
+        $stock = Ctsql::ctsqlExport("SELECT * FROM ocupalmac where codcli = 174 and codemp = 1 and coddel=1");
         return json_decode($stock[0])->data;
     }
 
@@ -205,7 +213,7 @@ class DasanciController extends Controller
         $numlin = 1;
         foreach($lines as $line) {
             $sku = $line->sku;
-            $articulo = Ctsql::ctsqlExport("SELECT * FROM artic WHERE codemp = 1 AND codcli = 158 AND codart='$sku'");
+            $articulo = Ctsql::ctsqlExport("SELECT * FROM artic WHERE codemp = 1 AND codcli = 174 AND codart='$sku'");
             $articulo = json_decode($articulo[0]);
             $articulo = $articulo->data;
 
@@ -220,7 +228,7 @@ class DasanciController extends Controller
                     ."dtoli2, descri, estado, tipdoc, tipiva, edilin, asocia,"
                     ."nopick, lnpick, codkit)"
                     ."VALUES"
-                    ."(1, 1, 158, 'S', 'WB', $ejercicio, $numped, $numlin,"
+                    ."(1, 1, 174, 'S', 'WB', $ejercicio, $numped, $numlin,"
                     ."'$sku', $cantid, 0, 0, 0, 0, 0,"
                     ."0, '$descri', '', 'P', 0, 'S', 0,"
                     ."0, 0, '')");
@@ -247,7 +255,7 @@ class DasanciController extends Controller
             ."txtven, okpick"
             .") "
             ."VALUES "
-            ."(1, 1, 158, 'S', 'WB', $ejercicio, $numped,"
+            ."(1, 1, 174, 'S', 'WB', $ejercicio, $numped,"
             ."'$fecped', '', 0, 0, 0,"
             ."0, 0, '$nomtec', '$dirtec', '$pobtec', $cpotec,"
             ."'$codtec', '$observ', '', 'N', 'N', '$fecped',"
@@ -290,7 +298,7 @@ class DasanciController extends Controller
         /*$pedido = Ctsql::ctsqlImport("DELETE FROM pedidos WHERE
           codemp=1 AND
           coddel=1 AND
-          codcli=158 AND
+          codcli=174 AND
           serped = 'WB' AND
           tipped = 'S' AND
           ejeped = 2016 AND
@@ -301,7 +309,7 @@ class DasanciController extends Controller
         $pedido = Ctsql::ctsqlExport("SELECT * FROM pedidos WHERE
           codemp=1 AND
           coddel=1 AND
-          codcli=158 AND
+          codcli=174 AND
           serped = 'WB' AND
           tipped = 'S' AND
           ejeped = 2016 AND
@@ -312,7 +320,7 @@ class DasanciController extends Controller
         $pedido = Ctsql::ctsqlExport("SELECT * FROM linpedidos WHERE
           codemp=1 AND
           coddel=1 AND
-          codcli=158 AND
+          codcli=174 AND
           serped = 'WB' AND
           tipped = 'S' AND
           ejeped = 2016 AND
@@ -326,14 +334,14 @@ class DasanciController extends Controller
 
 
     private function syncAlbaranes() {
-        $ordersDB = EcommerceOrders::where("cliente_id", 158)->where("status", "processing")->get();
+        $ordersDB = EcommerceOrders::where("cliente_id", 174)->where("status", "processing")->get();
         $ordersUpd = [];
         foreach($ordersDB as $orderDB) {
             $ejercicio = Carbon::createFromFormat('Y-m-d H:i:s', $orderDB->created_at)->year;
             $albaranes = Ctsql::ctsqlExport("SELECT * FROM albaran WHERE
               codemp=1 AND
               coddel=1 AND
-              codcli=158 AND
+              codcli=174 AND
               serped = 'WB' AND
               tipalb = 'S' AND
               ejeped = $ejercicio AND
@@ -401,7 +409,7 @@ class DasanciController extends Controller
             ."dirtec = '$dirtec', pobtec = '$pobtec', cpotec = $cpotec,"
             ."codtec = '$codtec', observ = '$observ', fecent ='$fecped',"
             ."pobdis = '$pobdis', nomfis = '$nomtec', refped = 'WEB-$numped'"
-            ." WHERE codemp=1 AND coddel=1 AND codcli=158 AND serped = 'WB' AND tipped = 'S' AND ejeped = $ejercicio AND numped = $numped";
+            ." WHERE codemp=1 AND coddel=1 AND codcli=174 AND serped = 'WB' AND tipped = 'S' AND ejeped = $ejercicio AND numped = $numped";
 
 
         $output = Ctsql::ctsqlImport($query);
@@ -421,7 +429,7 @@ class DasanciController extends Controller
         $query = "DELETE FROM linpedidos WHERE
           codemp=1 AND
           coddel=1 AND
-          codcli=158 AND
+          codcli=174 AND
           serped = 'WB' AND
           tipped = 'S' AND
           ejeped = $ejercicio  AND
@@ -457,7 +465,7 @@ class DasanciController extends Controller
         $pedido = Ctsql::ctsqlExport("SELECT * FROM pedidos WHERE
           codemp=1 AND
           coddel=1 AND
-          codcli=158 AND
+          codcli=174 AND
           serped = 'WB' AND
           tipped = 'S' AND
           ejeped = $ejercicio AND
@@ -473,7 +481,7 @@ class DasanciController extends Controller
 
         \Mail::send("emails.orders.cancelled", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("admon@logival.es", "Yolanda");
+            $message->to("admon.1@logival.es", "Dani");
             $message->subject("Pedido ".$data["num_pedido"]." CANCELADO");
         });
     }
@@ -484,7 +492,7 @@ class DasanciController extends Controller
         $pedido = Ctsql::ctsqlExport("SELECT * FROM pedidos WHERE
           codemp=1 AND
           coddel=1 AND
-          codcli=158 AND
+          codcli=174 AND
           serped = 'WB' AND
           tipped = 'S' AND
           ejeped = $ejercicio AND
@@ -500,7 +508,7 @@ class DasanciController extends Controller
 
         \Mail::send("emails.orders.refunded", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("admon@logival.es", "Yolanda");
+            $message->to("admon.1@logival.es", "Dani");
             $message->subject("Pedido ".$data["num_pedido"]." DEVUELTO");
         });
     }
@@ -511,7 +519,7 @@ class DasanciController extends Controller
         $pedido = Ctsql::ctsqlExport("SELECT * FROM pedidos WHERE
           codemp=1 AND
           coddel=1 AND
-          codcli=158 AND
+          codcli=174 AND
           serped = 'WB' AND
           tipped = 'S' AND
           ejeped = $ejercicio AND
@@ -527,7 +535,7 @@ class DasanciController extends Controller
 
         \Mail::send("emails.orders.updated", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("admon@logival.es", "Yolanda");
+            $message->to("admon.1@logival.es", "Dani");
             $message->subject("Pedido ".$data["num_pedido"]." MODIFICADO");
         });
     }
@@ -539,12 +547,12 @@ class DasanciController extends Controller
 
         $data = [
             "num_pedido" => "S/WB/$ejercicio/".$order->order_number,
-            "num_cliente" => 158
+            "num_cliente" => 174
         ];
 
         \Mail::send("emails.orders.created", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("admon@logival.es", "Yolanda");
+            $message->to("admon.1@logival.es", "Dani");
             $message->subject("Pedido ".$data["num_pedido"]." CREADO");
         });
     }
@@ -558,10 +566,10 @@ class DasanciController extends Controller
         if($newOrder)
             $orderDB = new EcommerceOrders();
         else {
-            $orderDB = EcommerceOrders::where("cliente_id", 158)->where("order_number", $order->order_number)->first();
+            $orderDB = EcommerceOrders::where("cliente_id", 174)->where("order_number", $order->order_number)->first();
             return $orderDB;
         }
-        $orderDB->cliente_id = 158;
+        $orderDB->cliente_id = 174;
         $orderDB->order_number = $order->order_number;
         $orderDB->status = $order->status;
         $createdAt = Carbon::createFromFormat('Y-m-d\TH:i:sP', $order->created_at)->toDateTimeString();
