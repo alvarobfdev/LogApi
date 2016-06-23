@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: alvarobanofos
+ * User: admon.1banofos
  * Date: 7/4/16
  * Time: 10:58
  */
@@ -481,7 +481,7 @@ class AlephwineryController extends Controller
 
         \Mail::send("emails.orders.cancelled", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("alvaro@logival.es", "Dani");
+            $message->to("admon.1@logival.es", "Dani");
             $message->subject("Pedido ".$data["num_pedido"]." CANCELADO");
         });
     }
@@ -508,7 +508,7 @@ class AlephwineryController extends Controller
 
         \Mail::send("emails.orders.refunded", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("alvaro@logival.es", "Dani");
+            $message->to("admon.1@logival.es", "Dani");
             $message->subject("Pedido ".$data["num_pedido"]." DEVUELTO");
         });
     }
@@ -535,7 +535,7 @@ class AlephwineryController extends Controller
 
         \Mail::send("emails.orders.updated", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("alvaro@logival.es", "Dani");
+            $message->to("admon.1@logival.es", "Dani");
             $message->subject("Pedido ".$data["num_pedido"]." MODIFICADO");
         });
     }
@@ -552,7 +552,7 @@ class AlephwineryController extends Controller
 
         \Mail::send("emails.orders.created", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("alvaro@logival.es", "Dani");
+            $message->to("admon.1@logival.es", "Dani");
             $message->subject("Pedido ".$data["num_pedido"]." CREADO");
         });
     }
