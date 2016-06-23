@@ -288,7 +288,7 @@ class AlephwineryController extends Controller
         $pobdis = $shipping_address->city;
         $codtec = $order->customer_id;
         $billing_address = $order->billing_address;
-        $observ = "NIF: " . $billing_address->nif . " Telf: " . $billing_address->phone . " Email:" . $billing_address->email;
+        $observ =  "Telf: " . $billing_address->phone . " Email:" . $billing_address->email;
         $ejercicio = Carbon::createFromFormat('Y-m-d\TH:i:sP', $order->created_at)->year;
         $numped = $order->order_number;
         return array($fecped, $nomtec, $dirtec, $pobtec, $cpotec, $pobdis, $codtec, $observ, $ejercicio, $numped);
@@ -481,7 +481,7 @@ class AlephwineryController extends Controller
 
         \Mail::send("emails.orders.cancelled", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("admon.1@logival.es", "Dani");
+            $message->to("alvaro@logival.es", "Dani");
             $message->subject("Pedido ".$data["num_pedido"]." CANCELADO");
         });
     }
@@ -508,7 +508,7 @@ class AlephwineryController extends Controller
 
         \Mail::send("emails.orders.refunded", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("admon.1@logival.es", "Dani");
+            $message->to("alvaro@logival.es", "Dani");
             $message->subject("Pedido ".$data["num_pedido"]." DEVUELTO");
         });
     }
@@ -535,7 +535,7 @@ class AlephwineryController extends Controller
 
         \Mail::send("emails.orders.updated", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("admon.1@logival.es", "Dani");
+            $message->to("alvaro@logival.es", "Dani");
             $message->subject("Pedido ".$data["num_pedido"]." MODIFICADO");
         });
     }
@@ -552,7 +552,7 @@ class AlephwineryController extends Controller
 
         \Mail::send("emails.orders.created", $data, function ($message) use ($data)  {
             $message->from("noreply@logival.es", "Logival Avisos");
-            $message->to("admon.1@logival.es", "Dani");
+            $message->to("alvaro@logival.es", "Dani");
             $message->subject("Pedido ".$data["num_pedido"]." CREADO");
         });
     }
