@@ -76,7 +76,8 @@ class WoocommerceApi
         $context = stream_context_create($aHTTP);
         $contents = @file_get_contents($url, false, $context);
         if($contents === FALSE) {
-            dd($contents);
+            var_dump($contents);
+            var_dump($aHTTP);
         }
         return json_decode($contents);
 
