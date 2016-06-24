@@ -1200,9 +1200,7 @@ class EdiController extends Controller
         foreach($tiendasUnreg as $ean => $value) {
             echo $ean."<br>";
         }
-
-
-
     }
 
+    
 }
