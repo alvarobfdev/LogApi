@@ -1040,6 +1040,7 @@ class EdiController extends Controller
             .")";
 
         Ctsql::ctsqlImport($query);
+        $this->productsNotFound = [];
         $this->saveLineasPedido($cabped, $codcli, $numped);
         $this->checkNotFoundProducts();
 
@@ -1049,7 +1050,7 @@ class EdiController extends Controller
         if(count($this->productsNotFound) > 0) {
             \Mail::send("emails.orders.edi-no-artic", ["data"=>$this->productsNotFound], function ($message)  {
                 $message->from("noreply@logival.es", "Logival Avisos");
-                $message->to("alvaro.bano.fos@gmail.com", "Yolanda");
+                $message->to("admon@logival.es", "Yolanda");
                 $message->subject("Pedido EDI con artículos erróneos");
             });
         }
