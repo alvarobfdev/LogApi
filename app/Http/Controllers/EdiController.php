@@ -1032,7 +1032,7 @@ class EdiController extends Controller
             ."VALUES "
             ."(1, 1, $codcli, 'S', '', $ejeped, $numped,"
             ."'$fecped', '', 0, 0, 0,"
-            ."0, 0, '$nomtec', '$dirtec', '$pobtec', $cpotec,"
+            ."0, 0, '$nomtec', '$dirtec', '$pobtec', '$cpotec',"
             ."'$eanComprador', '$observ', '', 'N', 'N', '$fecent',"
             ."'', '', '$pobdis', 0, '$nomfis', '$refped',"
             ."'N', 'N', 0, 0, 0, '',"
@@ -1186,21 +1186,12 @@ class EdiController extends Controller
     }
 
 
-    public function getCheckTiendas() {
-        $tiendasUnreg = [];
-        $localizaciones = EdiLoclped::all();
+    public function getCheckPedidos() {
+        $sql = "SELECT * FROM pedidos WHERE codcli = 176";
+        $pedidos = Ctsql::ctsqlExport($sql);
+        dd(json_decode($pedidos[0]));
 
-        foreach($localizaciones as $localizacion) {
-            $tienda = EdiClientes::where("ean", $localizacion->lugar)->first();
-            if(!$tienda) {
-                $tiendasUnreg[$localizacion->lugar] = "NULO";
-            }
-        }
-
-        foreach($tiendasUnreg as $ean => $value) {
-            echo $ean."<br>";
-        }
     }
 
-    
+
 }
