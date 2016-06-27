@@ -122,6 +122,17 @@
                         <button id="addToPalet" name="addToPalet" class="btn btn-primary">Añadir al palet</button>
                     </div>
                 </div>
+
+                <div id="capaTiendasRestantes" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h6>Tiendas con bultos restantes</h6>
+                        </div>
+                    </div>
+                    <div id="tiendasRestantes">
+
+                    </div>
+                </div>
             </div>
 
             <div id="capaVisorPalets" style="display: none;" class="col-md-6 col-sm-6">
@@ -132,6 +143,34 @@
     </form>
 @section('scripts')
     <script>
+
+        var datastring;
+        var formType = 'start';
+
+        var submitButton;
+        var spanLine;
+        var selectPalets;
+        var selectTiendas;
+        var inputNumBultos;
+        var inputBultosCapas;
+        var btnAddToPalet;
+        var selectTipoPalets;
+
+        var lineasAlbaran = [];
+        var tipoPalets = [];
+        var palets = [];
+        var tiendas = [];
+        var bultosTiendas = [];
+        var locs = [];
+        var bultosCapas = [];
+        var selectedLine;
+        var selectedTienda;
+        var selectedPalet;
+        var hasTiendas = false;
+        var modify = false;
+
+        var albaran;
+        var hashLocalData;
 
         String.prototype.hashCode = function() {
             var hash = 0, i, chr, len;
@@ -144,407 +183,26 @@
             return hash;
         };
 
-        var formType = 'start';
-        var albaran = null;
-        var linAlbaran = null;
-        var products = null;
-        var maxBultos = 0;
-        var selectedLinea = 0;
-        var palets = [];
-        var bultosCapas = [];
-        var tipoPalets = [];
-        var tiendasList = [];
-        var locs = [];
-        var bultosTiendas = [];
-        var tiendas = true;
-        var modify = false;
-        var local_storage = {};
-        var num_albaran = null;
-        var ejercicio = null;
-        var cliente = null;
-        var datastring;
+        $('form').submit(function(e) {
+            e.preventDefault();
+            e.stopPropagation();
 
-        $(function() {
-            //startAlbaran($('form'));
+            if(formType == 'start') {
+                startAlbaran($(this));
+            }
+            else if(formType == 'addToPalet') {
+                addToPalet();
+            }
 
-            $('body').on('change', '#numTienda', function(e) {
-
-                manejarLinea(selectedLinea);
-
-            });
-
-            $('body').on('click', '#lineUp', function(e) {
-
-                if(selectedLinea > 0) {
-                    manejarLinea(selectedLinea-1);
-                }
-            });
-
-            $('body').on('click', '#lineDown', function(e) {
-                if(selectedLinea < linAlbaran.length-1) {
-                    manejarLinea(selectedLinea+1);
-                }
-            });
-
-            $('body').on('click', '#resetLocal', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                var response = confirm("¿Quieres borrar los datos locales?");
-
-                if (response == true) {
-                    localStorage.removeItem("temp_data");
-                    window.location.href = '{{url("/app/edi/exportar-edi")}}';
-                }
-            });
-
-            $('body').on('click', '.modificarCantidad', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                if(formType == 'endEdi') {
-                    formType = 'addToPalet';
-                    $('#addToPalet').text("Añadir al palet");
-
-                }
-
-                var numBultos = Number($(this).prev('input').val());
-                var numPalet = Number($(this).attr('data-palet'));
-                selectedLinea = Number($(this).attr('data-linea'));
-                var selectedTienda = "";
-                var bultos_restantes = linAlbaran[selectedLinea].bultos;
-                if(tiendas) {
-                    selectedTienda = Number($(this).attr('data-tienda'));
-                    palets[numPalet - 1][selectedLinea][selectedTienda] = numBultos;
-                    for(var i = 0; i<palets[numPalet - 1][selectedLinea].length; i++) {
-                        bultos_restantes -= palets[numPalet - 1][selectedLinea][i];
-                    }
-                }
-                else  {
-                    palets[numPalet - 1][selectedLinea] = numBultos;
-                    bultos_restantes -= numBultos;
-                }
-
-                linAlbaran[selectedLinea].bultos_restantes = bultos_restantes;
-
-                if(bultos_restantes > 0)
-                    manejarLinea(selectedLinea);
-                else manejarLinea(selectedLinea+1);
-            });
-
-            $('form').submit(function(e) {
-                e.preventDefault();
-                if(formType == 'start') {
-                    startAlbaran($(this));
-                }
-                else if(formType == 'addToPalet') {
-                    addToPalet();
-                }
-
-                else if(formType == 'endEdi') {
-
-                    finalizarEdi();
-                }
-            });
+            else if(formType == 'endEdi') {
+                finalizarEdi();
+            }
         });
-
-        function resetButton() {
-            $("#comenzar").prop("disabled", false);
-            $("#comenzar").text("Comenzar");
-        }
-        function startAlbaran(form) {
-            datastring = form.serialize();
-
-            form.find("#comenzar").prop("disabled", true);
-            form.find("#comenzar").text("Obteniendo albarán...");
-
-            $.getJSON('{{url('app/edi/albaran-for-edi')}}', datastring, function(result) {
-
-                ejercicio = $('#ejercicio').val();
-                cliente = $('#numCliente').val();
-                num_albaran = $('#numAlbaran').val();
-
-                var json = result;
-
-                if(json.success == false) {
-
-                    if(json.hasOwnProperty('error')) {
-                        alert(json.error);
-
-                    }
-                    else alert("Ha habido un fallo al obtener los datos!");
-
-                    resetButton();
-                    return;
-                }
-                if(json.data.albaran == null) {
-                    alert("No existe ningún albarán de salida con estos datos!");
-                    resetButton();
-                    return;
-                }
-                //localStorage.removeItem("temp_data");
-                var temp_data = localStorage.getItem("temp_data");
-                if(temp_data !== undefined && temp_data != null) {
-
-                    var hash = datastring.hashCode();
-
-                    var tempParsed = $.parseJSON(temp_data);
-                    console.log(tempParsed);
-                    if(tempParsed.hash == hash) {
-                        albaran = tempParsed.albaran;
-                        linAlbaran = tempParsed.linAlbaran;
-                        products = json.data.products;
-                        locs = json.data.locs;
-                        tipoPalets = tempParsed.tipoPalets;
-                        tiendasList = tempParsed.tiendasList;
-
-
-                        if (tiendasList.length == 0) {
-                            tiendas = false;
-                        }
-
-                        construirPalets();
-                        palets = tempParsed.palets;
-                        bultosCapas = tempParsed.bultosCapas;
-                        bultosTiendas = tempParsed.bultosTiendas;
-
-
-
-                        $('#capaBusquedaAlbaran').hide();
-                        $('#capaMontarPalets').show();
-                        $('#capaVisorPalets').show();
-
-                        manejarLinea(0);
-                        reloadVisorPalets();
-                        formType = 'addToPalet';
-
-                        return;
-                    }
-                }
-
-                if (json.modify) {
-                    albaran = json.data.albaran;
-                    linAlbaran = json.data.lin_albaran;
-                    products = json.data.products;
-                    maxBultos = 0;
-                    selectedLinea = 0;
-                    tipoPalets = json.data.tipoPalets;
-                    tiendasList = json.data.tiendasList;
-
-
-                    if (tiendasList.length == 0) {
-                        tiendas = false;
-                    }
-
-                    modify = true;
-
-                    construirPalets();
-                    palets = json.data.palets;
-                    bultosCapas = json.data.bultosCapas;
-
-
-                    $('#capaBusquedaAlbaran').hide();
-                    $('#capaMontarPalets').show();
-                    $('#capaVisorPalets').show();
-
-                    manejarLinea(0);
-                    reloadVisorPalets();
-                    $('#addToPalet').after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+cliente+'/'+ejercicio+'/'+num_albaran+'" class="btn btn-primary">Albarán físico</a>');
-                    return;
-                }
-
-                if (json.data.albaran.totpal < 1) {
-                    alert("No se han asignado palets a este albarán!");
-                    resetButton();
-                    return;
-                }
-
-                albaran = json.data.albaran;
-                linAlbaran = json.data.lin_albaran;
-                products = json.data.products;
-                tiendasList = json.data.tiendasList;
-                locs = json.data.locs;
-
-                if (tiendasList.length == 0) {
-                    tiendas = false;
-                }
-
-                buildFormPalet(form);
-
-                formType = 'addToPalet';
-
-
-            }).fail(function( jqxhr, textStatus, error ) {
-                var err = jqxhr.status + ", " + error;
-                alert("Error: "+err+".\nComprobar conexión de las máquinas.");
-            });
-
-        }
-
-        function buildFormPalet(form) {
-            $('#capaBusquedaAlbaran').hide();
-            $('#capaMontarPalets').show();
-            $('#capaVisorPalets').show();
-
-
-            construirPalets();
-            manejarLinea(0, 0);
-        }
-
-        function construirPalets() {
-            palets = new Array(albaran.totpal);
-            bultosCapas = new Array(albaran.totpal);
-            bultosTiendas = new Array(tiendasList.length);
-
-            if(tiendas) {
-                for (var iTienda = 0; iTienda < tiendasList.length; iTienda++) {
-                    $('#numTienda').append($('<option>', {
-                        value: iTienda,
-                        text: tiendasList[iTienda].cod_interno + " - " + tiendasList[iTienda].nombre
-                    }));
-
-                    bultosTiendas[iTienda] = new Array(linAlbaran.length);
-
-                    for(var iLinea = 0; iLinea < linAlbaran.length; iLinea++) {
-                        var product = getProductFromLinea(linAlbaran[iLinea]);
-                        var loc = getCurrentLoc(product, tiendasList[iTienda]);
-                        var cantidad = 0;
-                        if(loc != null) {
-                            var udsBulto = linAlbaran[iLinea].cantid / linAlbaran[iLinea].bultos;
-                            var cantidad = loc.cantidad / udsBulto;
-                        }
-
-                        bultosTiendas[iTienda][iLinea] = cantidad;
-                    }
-
-                }
-
-            }
-
-            for(var i=0; i<albaran.totpal; i++) {
-                $('#numPalet').append($('<option>', {
-                    value: i + 1,
-                    text: 'Palet ' + (i + 1)
-                }));
-
-                palets[i] = new Array(linAlbaran.length);
-                bultosCapas[i] = new Array(linAlbaran.length);
-                tipoPalets[i] = 201;
-                for(var j=0; j<linAlbaran.length; j++) {
-                    if(!modify)
-                        linAlbaran[j].bultos_restantes = linAlbaran[j].bultos;
-                    if(!tiendas)
-                        palets[i][j] = 0;
-                    else {
-                        palets[i][j] = new Array(tiendasList.length);
-                        for(var iTienda=0; iTienda < tiendasList.length; iTienda++) {
-                            palets[i][j][iTienda] = 0;
-                        }
-                    }
-                    bultosCapas[i][j] = 0;
-                }
-            }
-        }
-
-        function manejarLinea(numLinea) {
-
-            if(numLinea < linAlbaran.length) {
-                selectedLinea = numLinea;
-                var linea = linAlbaran[numLinea];
-                if(linea.bultos_restantes == 0) {
-                    manejarLinea(numLinea+1);
-                    return;
-                }
-                maxBultos = linea.bultos_restantes;
-
-                $('#lineaAlbaran').text(linea.codart + " | "+linea.descri + " | "+linea.horizo + "-" + linea.vertic +
-                        " (Quedan "+ (maxBultos) +" bultos)");
-
-                $('#numBultos').prop("max", maxBultos);
-                $('#numBultos').val(maxBultos);
-
-
-                if(tiendas == true) {
-
-                    var numTienda = Number($("#numTienda").val());
-                    if(bultosTiendas[numTienda][numLinea] <= 0) {
-                        var nextLine = getNextNotEmptyShopLine(bultosTiendas[numTienda]);
-                        if(nextLine != -1) {
-                            manejarLinea(nextLine);
-                            return;
-                        }
-                        else {
-                            $("#numTienda").val(numTienda+1);
-                            return;
-                        }
-                    }
-
-                    if(modify == false) {
-
-                        /*var articulo = getCurrentArticle();
-                         var idTienda = $('#numTienda').val();
-                         var tienda = tiendasList[idTienda];
-                         var loc = getCurrentLoc(articulo, tienda);
-                         var cantidad = 0;
-                         if (loc != null) {
-                         var udsBulto = linAlbaran[selectedLinea].cantid / linAlbaran[selectedLinea].bultos;
-                         cantidad = loc.cantidad / udsBulto;
-                         }*/
-
-                        var cantidad = bultosTiendas[numTienda][numLinea];
-
-                        $('#numBultos').prop("max", cantidad);
-                        $('#numBultos').val(cantidad);
-                    }
-                }
-            }
-            else {
-                var nextNotEmptyLine = getNextNotEmptyLine();
-                if(nextNotEmptyLine == -1) {
-                    formType = "endEdi";
-                    $('#addToPalet').text("Finalizar exportación");
-                    $('#lineaAlbaran').text("");
-                }
-                else {
-                    manejarLinea(nextNotEmptyLine);
-                }
-            }
-
-        }
-
-        function getNextNotEmptyLine() {
-            for(var i=0; i<linAlbaran.length; i++) {
-                if(linAlbaran[i].bultos_restantes > 0) {
-                    return i;
-                }
-            }
-            return -1;
-        }
 
         function finalizarEdi() {
 
-            /*
-             $("button").prop("disabled", true);
-             $("#addToPalet").text("Exportando...");
-             $.post('{{url('app/edi/finish-export-edi')}}', {
-             'albaran': JSON.stringify(albaran),
-             'palets':JSON.stringify(palets),
-             'tipoPalets':JSON.stringify(tipoPalets),
-             'tiendasList':JSON.stringify(tiendasList),
-             'lineas':JSON.stringify(linAlbaran),
-             'bultosCapas':JSON.stringify(bultosCapas),
-             'modify':modify,
-             '_token':'{{ csrf_token() }}'
-
-             }, function() {
-             alert("Fichero exportado con éxito!");
-             window.location.reload();
-             }, "json").error(function() {
-             alert("Fallo al exportar fichero. Consulte a un técnico");
-             });
-             */
-
-            $('#addToPalet').text("Exportando EDI...")
-            $('#addToPalet').addClass("disabled");
+            btnAddToPalet.text("Exportando EDI...")
+            btnAddToPalet.addClass("disabled");
 
             var request = $.ajax({
                 url: '{{url('app/edi/finish-export-edi')}}',
@@ -553,9 +211,10 @@
                     'albaran': JSON.stringify(albaran),
                     'palets':JSON.stringify(palets),
                     'tipoPalets':JSON.stringify(tipoPalets),
-                    'tiendasList':JSON.stringify(tiendasList),
-                    'lineas':JSON.stringify(linAlbaran),
+                    'tiendasList':JSON.stringify(tiendas),
+                    'lineas':JSON.stringify(lineasAlbaran),
                     'bultosCapas':JSON.stringify(bultosCapas),
+                    'locs':JSON.stringify(locs),
                     'modify':modify,
                 },
                 headers: {
@@ -566,213 +225,692 @@
 
             request.done(function() {
                 alert("Fichero exportado con éxito!");
-                $('#addToPalet').text("Fichero exportado!");
-                $('#addToPalet').after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+cliente+'/'+ejercicio+'/'+num_albaran+'" class="btn btn-primary">Albarán físico</a>');
-                localStorage.removeItem("temp_data");
+                btnAddToPalet.text("Fichero exportado!");
+                if(!modify)
+                    btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.numalb+'" class="btn btn-primary">Albarán físico</a>');
+                localStorage.removeItem("localData"+hashLocalData);
                 //window.location.reload();
             });
 
             request.fail(function() {
                 alert("Fallo al exportar fichero. Consulte a un técnico");
-                $('#addToPalet').text("Finalizar exportación");
-                $('#addToPalet').removeClass("disabled");
+                btnAddToPalet.text("Finalizar exportación");
+                btnAddToPalet.removeClass("disabled");
 
             });
+
         }
 
-        function getProductFromLinea(linea) {
-            for(var i=0; i<products.length; i++) {
-                if(linea.codart == products[i].codart) {
-                    return products[i];
+        function refreshTiendasRestantes() {
+            var html = buildTiendasRestantes();
+            $('#tiendasRestantes').html(html);
+            $('#capaTiendasRestantes').show();
+        }
+
+        function buildTiendasRestantes() {
+            var html = ""
+            for(var i=0; i<lineasAlbaran.length; i++) {
+                var infoBulto = false;
+                var htmlTiendas = "";
+
+                for(var j=0; j<tiendas.length; j++) {
+                    if(bultosTiendas[j][i] > 0) {
+                        infoBulto = true;
+                        htmlTiendas += '<div class="tienda"><span>'+tiendas[j].cod_interno+' x '+bultosTiendas[j][i]+'</span></div>'
+                    }
+                }
+                if(infoBulto) {
+                    var linea = lineasAlbaran[i];
+                    html += '<div class="bulto">\
+                                        <span>' + linea.codart + ' | ' + linea.descri + '  x </span>\
+                                        '+htmlTiendas+'\
+                                 </div>';
                 }
             }
-
-            return null;
+            return html;
         }
 
+        function refreshVisor() {
+            var html = buildPaletsVisor();
+            $('#capaVisorPalets').html(html);
+        }
 
-        function getCurrentArticle() {
-            for(var i=0; i < products.length; i++) {
-                codart = linAlbaran[selectedLinea].codart;
-                if(products[i].codart == codart) {
-                    return products[i];
-                }
+        function buildPaletsVisor() {
+            var html = '';
+            for(var i=0; i<palets.length; i++) {
+                html += '<div class="palet"><span><strong>Palet '+(i+1)+'</strong></span>'+buildPaletsContent(i)+'</div>';
             }
-            return null;
+
+            html += '<br><button id="resetLocal" class="btn btn-danger">Resetear</button>';
+
+            return html;
         }
 
-        function getCurrentLoc(articulo, tienda) {
-            for(var i=0; i<locs.length; i++) {
-                if(locs[i].prod == articulo.codbar && locs[i].lugar == tienda.ean) {
-                    return locs[i];
+        function buildPaletsContent(paletIndex) {
+            var html = '';
+            for(var i=0; i<palets[paletIndex].length; i++) {
+                var numBultosCapa = bultosCapas[paletIndex][i];
+                if(numBultosCapa>0) {
+                    html += '<div class="bultoCapa">\
+                                    <span>Bultos/capa  x </span><input type="number" min="0" max="' + numBultosCapa + '" value="' + numBultosCapa + '">\
+                                     <button data-palet="' + paletIndex + '" data-linea="' + i + '" class="btn btn-primary modificarBultosCapa">Modificar</button></div>';
                 }
-            }
-            return null;
-        }
-
-
-        function addToPalet() {
-            numPalet = $('#numPalet').val();
-            numBultos = $('#numBultos').val();
-            tipoPalet = $('#tipoPalet').val();
-            numTienda = $('#numTienda').val();
-            bultosXcapa = $('#bultosCapa').val();
-
-            numTienda = Number(numTienda);
-
-            tipoPalets[numPalet-1] = tipoPalet;
-
-            bultosCapas[numPalet - 1][selectedLinea] = bultosXcapa;
-
-            if($.isNumeric(numBultos) && numBultos <= maxBultos) {
-                if(!tiendas) {
-                    palets[numPalet - 1][selectedLinea] += Number(numBultos);
+                if(hasTiendas) {
+                    html += buildTiendasContent(paletIndex, i);
                 }
                 else {
-                    palets[numPalet-1][selectedLinea][numTienda] += Number(numBultos);
-                }
-                reloadVisorPalets();
-            }
+                    html += buildBultosContent(paletIndex, i);
 
-            else {
-                alert("El número de bultos es incorrecto");
-                return;
-            }
-
-
-
-            linAlbaran[selectedLinea].bultos_restantes = maxBultos - numBultos;
-
-            if(modify == false)
-                saveToLocal();
-
-            if(tiendas) {
-                bultosTiendas[numTienda][selectedLinea] -= Number(numBultos);
-                if(bultosTiendas[numTienda][selectedLinea] <= 0) {
-                    var nextNotEmptyShopLine = getNextNotEmptyShopLine(bultosTiendas[numTienda]);
-                    if(nextNotEmptyShopLine != -1) {
-                        manejarLinea(nextNotEmptyShopLine);
-                        if(modify == false)
-                            saveToLocal();
-                        return;
-                    }
-                    else {
-
-                        if(numTienda+1 <= tiendasList.length-1) {
-                            $('#numTienda').val(numTienda+1);
-                            manejarLinea(selectedLinea);
-                            if(modify == false)
-                                saveToLocal();
-                            return;
-                        }
-                    }
                 }
             }
+            return html;
+        }
 
+        function buildBultosContent(paletIndex, lineIndex) {
 
+            var numBultos = palets[paletIndex][lineIndex];
+            var html = '';
 
-            if(numBultos < maxBultos) {
-                manejarLinea(selectedLinea);
+            if(numBultos > 0) {
+                var linea = lineasAlbaran[lineIndex];
+                var html = '<div class="bulto">\
+                                        <span>' + linea.codart + ' | ' + linea.descri + '  x </span><input type="number" min="0" max="' + numBultos + '" value="' + numBultos + '">\
+                                         <button data-palet="' + paletIndex + '" data-linea="' + lineIndex + '" class="btn btn-primary modificarCantidad">Modificar</button></div>';
             }
 
-            else {
-                manejarLinea(selectedLinea+1)
+            return html;
+        }
+
+
+        function buildTiendasContent(paletIndex, lineIndex) {
+            var html = '';
+            var addArticleInfo = false;
+
+            for(var i=0; i<palets[paletIndex][lineIndex].length; i++) {
+
+                var numBultosTienda = palets[paletIndex][lineIndex][i];
+                var tienda = tiendas[i];
+
+                if(numBultosTienda > 0) {
+                    var completed = "completed";
+                    if(bultosTiendas[i][lineIndex] > 0) {
+                        completed = "incomplete";
+                    }
+                    addArticleInfo = true;
+                    html += '<div class="tienda '+completed+'">\
+                    <span>' + tienda.cod_interno + '  x </span><input type="number" min="0" max="' + numBultosTienda + '" value="' + numBultosTienda + '">\
+                    <button data-tienda="' + i + '" data-palet="' + paletIndex + '" data-linea="' + lineIndex + '" class="btn btn-primary modificarCantidad">Modificar</button></div>';
+                }
+            }
+
+            if(addArticleInfo) {
+                var linea = lineasAlbaran[lineIndex];
+                html = '<div class="bulto"><span>' + linea.codart + ' | ' + linea.descri + '</span>' + html +'</div>';
+            }
+
+
+
+            return html;
+        }
+
+        function addToPalet() {
+            var numBultos = Number(inputNumBultos.val());
+            if(numBultos > 0) {
+                lineasAlbaran[selectedLine].bultosRestantes -= numBultos;
+                bultosCapas[selectedPalet][selectedLine] = Number(inputBultosCapas.val());
+                tipoPalets[selectedPalet] = Number(selectTipoPalets.val());
+                if (hasTiendas) {
+                    addToPaletForTienda(numBultos);
+                }
+                else addToPaletDefault(numBultos);
+
+                nextIteraction();
+
             }
         }
 
-        function getNextNotEmptyShopLine(bultosTienda) {
+        function saveToLocal() {
+            var local_object = {};
+            local_object.lineasAlbaran = lineasAlbaran;
+            local_object.tipoPalets = tipoPalets;
+            local_object.palets = palets;
+            local_object.bultosCapas = bultosCapas;
+            local_object.tiendas = tiendas;
+            local_object.locs = locs;
+            local_object.hasTiendas = hasTiendas;
+            local_object.bultosTiendas = bultosTiendas;
+            local_object.selectedLine = selectedLine;
+            local_object.selectedPalet = selectedPalet;
+            local_object.selectedTienda = selectedTienda;
+            localStorage.setItem("localData"+hashLocalData, JSON.stringify(local_object));
+        }
 
-            for(var i=0; i<bultosTienda.length; i++) {
-                if(bultosTienda[i] > 0) {
+        function nextIteraction() {
+            refreshVisor();
+            if(hasTiendas) {
+                refreshTiendasRestantes();
+                nextTiendaIteraction();
+            }
+            else {
+                nextGeneralIteraction();
+            }
+            saveToLocal();
+        }
+
+        function nextGeneralIteraction() {
+            if(!nextGeneralLine()) {
+                finishForm();
+            }
+        }
+
+        function nextGeneralLine() {
+            var nextLine = nextGeneralLineIndex();
+
+            if(nextLine != -1) {
+                selectedLine = nextLine;
+                loadLineHtml();
+                setMaxBultosInput();
+                return true;
+            }
+            return false;
+
+        }
+
+        function nextGeneralLineIndex() {
+
+            for(var i=0; i < lineasAlbaran.length; i++) {
+                if(lineasAlbaran[i].bultosRestantes > 0) {
                     return i;
                 }
             }
             return -1;
         }
 
-        function saveToLocal() {
-
-            var hash = datastring.hashCode();
-
-            local_storage.hash = hash;
-            local_storage.albaran = albaran;
-            local_storage.palets = palets;
-            local_storage.tipoPalets = tipoPalets;
-            local_storage.tiendasList = tiendasList;
-            local_storage.linAlbaran = linAlbaran;
-            local_storage.bultosCapas = bultosCapas;
-            local_storage.bultosTiendas = bultosTiendas;
-            localStorage.setItem("temp_data", JSON.stringify(local_storage));
-
+        function getAllBultosRestantes() {
+            var bultosRestantes = 0;
+            for(var i=0; i<lineasAlbaran.length; i++) {
+                bultosRestantes += lineasAlbaran[i].bultosRestantes;
+            }
+            return bultosRestantes;
         }
 
+        function nextTiendaIteraction() {
 
-        function reloadVisorPalets() {
-            $('#capaVisorPalets').html('');
-
-            for(var i=0; i<palets.length; i++) {
-                var html = '<div class="palet"><span><strong>Palet '+(i+1)+'</strong></span>';
-                $.each(palets[i], function(index, value) {
-                    var numBultosCapa = bultosCapas[i][index];
-
-                    var numLinea = index;
-                    var linea = linAlbaran[numLinea];
-
-                    var htmlBultosCapa = '<div class="bultoCapa">\
-                                    <span>Bultos/capa  x </span><input type="number" min="0" max="' + numBultosCapa + '" value="' + numBultosCapa + '">\
-                                     <button data-palet="' + (i + 1) + '" data-linea="' + numLinea + '" class="btn btn-primary modificarBultosCapa">Modificar</button></div>';
-
-
-
-                    if(!tiendas) {
-
-                        if (value > 0) {
-
-                            html += '<div class="bulto">\
-                                    <span>' + linea.codart + ' | ' + linea.descri + '  x </span><input type="number" min="0" max="' + value + '" value="' + value + '">\
-                                     <button data-palet="' + (i + 1) + '" data-linea="' + numLinea + '" class="btn btn-primary modificarCantidad">Modificar</button>';
-
-                            html += htmlBultosCapa;
-
-
-                            html += '</div>';
-                        }
-                    }
-                    else {
-
-                        var htmlTiendas = "";
-                        var addBulto = false;
-                        $.each(value, function(iTienda, bultos) {
-
-                            var cod_interno = tiendasList[iTienda].cod_interno;
-
-                            if(bultos > 0) {
-                                htmlTiendas += '<div class="tienda">\
-                                        <span>' + cod_interno + '  x </span><input type="number" min="0" max="' + bultos + '" value="' + bultos + '">\
-                                         <button data-tienda="' + iTienda + '" data-palet="' + (i + 1) + '" data-linea="' + numLinea + '" class="btn btn-primary modificarCantidad">Modificar</button></div>';
-                                addBulto = true;
-                            }
-                        });
-
-                        if(addBulto) {
-                            html += '<div class="bulto"><span>' + linea.codart + ' | ' + linea.descri + '</span>';
-
-
-                            html += htmlBultosCapa;
-                            html += htmlTiendas;
-
-                            html += '</div>';
-                        }
-                    }
-                });
-                html += '</div>';
-
-                $('#capaVisorPalets').append(html);
+            if(getAllBultosRestantes() <= 0) {
+                finishForm();
+                return;
             }
 
-            $('#capaVisorPalets').append('<br><button id="resetLocal" class="btn btn-danger">Resetear</button>');
+            if(!nextLineIndex()) {
+                if (!nextTiendaIndex()) {
+                    finishForm();
+                }
+                else {
+                    nextLineIndex();
+                }
+            }
 
         }
+
+        function nextLineIndex() {
+            var nextLine = nextTiendaLineIndex();
+
+            if(nextLine != -1) {
+
+                selectedLine = nextLine;
+                loadLineHtml();
+                setMaxBultosInput();
+                return true;
+            }
+            return false;
+
+        }
+
+        function finishForm() {
+            formType = "endEdi";
+            btnAddToPalet.text("Finalizar exportación");
+            spanLine.text("");
+        }
+
+        function resetForm() {
+            formType = "addToPalet";
+            btnAddToPalet.text("Añadir al Palet");
+        }
+
+        function nextTiendaIndex(tienda) {
+            var nextTienda = nextTiendaIndexSearch();
+            if(nextTienda != -1) {
+                selectTiendas.val(nextTienda);
+                selectedTienda = nextTienda;
+                setMaxBultosInput();
+                return true;
+            }
+            return false;
+
+        }
+
+        function nextTiendaIndexSearch() {
+            for(var i=0; i < bultosTiendas.length; i++) {
+                for(var j=0; j < bultosTiendas[i].length; j++) {
+                    if(bultosTiendas[i][j] > 0) {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+        }
+
+        function nextTiendaLineIndex() {
+            for(var i=0; i < bultosTiendas[selectedTienda].length; i++) {
+                if(bultosTiendas[selectedTienda][i] > 0) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        function addToPaletDefault(numBultos) {
+
+            palets[selectedPalet][selectedLine] += numBultos;
+
+        }
+
+        function addToPaletForTienda(numBultos) {
+
+            palets[selectedPalet][selectedLine][selectedTienda] += numBultos;
+            bultosTiendas[selectedTienda][selectedLine] -= numBultos;
+        }
+
+        function startAlbaran(form) {
+
+            submitButton = $('#comenzar');
+            spanLine = $('#lineaAlbaran');
+            selectPalets = $('#numPalet');
+            selectTiendas = $('#numTienda');
+            inputNumBultos = $('#numBultos');
+            inputBultosCapas = $('#bultosCapa');
+            btnAddToPalet = $('#addToPalet');
+            selectTipoPalets = $('#tipoPalet');
+
+            submitButton.prop("disabled", true);
+            submitButton.text("Obteniendo albarán...");
+            datastring = form.serialize();
+
+            $.getJSON('{{url('app/edi/albaran-for-edi')}}', datastring, function(result) {
+                cargarExportador(result);
+            });
+
+        }
+
+        function getHashLocalData() {
+            var string = albaran.codcli+"-"+albaran.ejerci+"-"+albaran.numalb;
+            return string.hashCode();
+        }
+
+        function cargarExportador(data) {
+            if(showCargarExportadorErrors(data)) {
+                resetSubmitButton();
+                return;
+            }
+            albaran = data.data.albaran;
+            hashLocalData = getHashLocalData();
+
+            if(loadIfExported(data)) {
+                return;
+            }
+
+            if(loadIfTempData()) {
+                return;
+            }
+
+            loadDefault(data.data);
+            loadHtml();
+            nextIteraction();
+
+        }
+
+        function loadIfExported(data) {
+            if(!data.modify)
+                return false;
+            else {
+                modify = true;
+                loadSavedData(data.data);
+                loadHtml();
+                btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.numalb+'" class="btn btn-primary">Albarán físico</a>');
+                refreshVisor();
+                nextIteraction();
+                return true;
+            }
+        }
+
+        function loadSavedData(data) {
+            lineasAlbaran = data.lin_albaran;
+            tipoPalets = data.tipoPalets;
+            palets = data.palets;
+            bultosCapas = data.bultosCapas;
+            tiendas = data.tiendasList;
+            locs = data.locs;
+            bultosTiendas = new Array(tiendas.length);
+
+            for(var i=0; i<bultosTiendas.length; i++) {
+                bultosTiendas[i] = new Array(lineasAlbaran.length);
+            }
+
+            if(tiendas.length > 0) {
+                hasTiendas = true;
+            }
+
+            for(var i=0; i < locs.length; i++) {
+                var tiendaIndex = getTiendaIndexFromEan(locs[i].lugar);
+                var lineIndex = getLinAlbaranIndexFromCodart(locs[i].codart);
+                var udsBulto = lineasAlbaran[lineIndex].udsbul;
+                bultosTiendas[tiendaIndex][lineIndex] = 0;
+            }
+
+            selectedLine = 0;
+            selectedPalet = 0;
+            selectedTienda = 0;
+        }
+
+        function loadHtml() {
+            if(hasTiendas)
+                loadHtmlForTienda();
+            else {
+                loadDefaultHtml();
+            }
+            showExportador();
+        }
+
+        function loadDefault(data) {
+            loadSharedVariables(data);
+        }
+
+        function showExportador() {
+            $('#capaBusquedaAlbaran').hide();
+            $('#capaMontarPalets').show();
+            $('#capaVisorPalets').show();
+            formType = 'addToPalet';
+        }
+
+        function setMaxBultosInput() {
+            var maxBultos = lineasAlbaran[selectedLine].bultosRestantes;
+            if(hasTiendas) {
+                maxBultos = bultosTiendas[selectedTienda][selectedLine];
+            }
+            inputNumBultos.prop("max", maxBultos);
+            inputNumBultos.val(maxBultos);
+        }
+
+        function loadDefaultHtml() {
+            loadLineHtml();
+            loadPaletHtml();
+        }
+
+        function loadHtmlForTienda() {
+            loadDefaultHtml();
+            loadTiendasHtml();
+        }
+
+        function loadTiendasHtml() {
+
+            for(var i=0; i<tiendas.length; i++)
+            {
+                var params = {};
+                params.value = i;
+                params.text = tiendas[i].cod_interno + " - " + tiendas[i].nombre;
+                if(selectedTienda == i) {
+                    params.selected = 'selected';
+                }
+
+                selectTiendas.append($('<option>', params));
+            }
+
+        }
+
+        function loadPaletHtml() {
+
+
+            for(var i=0; i<palets.length; i++) {
+                var params = {};
+                params.value = i;
+                params.text = 'Palet ' + (i + 1);
+
+                if(selectedPalet == i) {
+                    params.selected = 'selected';
+                }
+
+                selectPalets.append($('<option>', params));
+            }
+        }
+
+
+        function loadLineHtml() {
+
+            var linea = lineasAlbaran[selectedLine];
+
+            spanLine.text(linea.codart + " | "+linea.descri + " | "+linea.horizo + "-" + linea.vertic +
+                    " (Quedan "+ (linea.bultosRestantes) +" bultos)");
+        }
+
+        function loadLocalData(data) {
+            var local_object = JSON.parse(data);
+            console.log(local_object);
+
+            lineasAlbaran = local_object.lineasAlbaran;
+            tipoPalets = local_object.tipoPalets;
+            palets = local_object.palets;
+            bultosCapas = local_object.bultosCapas;
+            tiendas = local_object.tiendas;
+            locs = local_object.locs;
+            hasTiendas = local_object.hasTiendas;
+            bultosTiendas = local_object.bultosTiendas;
+            selectedLine = local_object.selectedLine;
+            selectedPalet = local_object.selectedPalet;
+            selectedTienda = local_object.selectedTienda;
+        }
+
+        function loadIfTempData() {
+            var tempData = localStorage.getItem("localData"+hashLocalData);
+            if(tempData !== undefined && tempData != null) {
+                loadLocalData(tempData);
+                loadHtml();
+                refreshVisor();
+                nextIteraction();
+                return true;
+            }
+            return false;
+        }
+
+        function loadSharedVariables(data) {
+            lineasAlbaran = data.lin_albaran;
+            tipoPalets = new Array(data.albaran.totpal);
+            palets = new Array(data.albaran.totpal);
+            bultosCapas = new Array(data.albaran.totpal);
+            tiendas = data.tiendasList;
+            locs = data.locs;
+
+            if(tiendas.length > 0) {
+                hasTiendas = true;
+            }
+
+            for(var i=0; i < palets.length; i++) {
+                palets[i] = new Array(lineasAlbaran.length);
+                bultosCapas[i] = new Array(lineasAlbaran.length);
+            }
+
+            initializeSharedVariables();
+
+            if(hasTiendas) {
+                loadDataForTiendas();
+            }
+        }
+
+        function initializeSharedVariables() {
+            for(var i=0; i < palets.length; i++) {
+                for(var j=0; j < lineasAlbaran.length; j++) {
+                    palets[i][j] = 0;
+                    bultosCapas[i][j] = 0;
+                    lineasAlbaran[j].bultosRestantes = lineasAlbaran[j].bultos;
+                }
+            }
+            selectedLine = 0;
+            selectedPalet = 0;
+        }
+
+        function initializeSharedVariablesForTienda() {
+            for(var i=0; i < palets.length; i++) {
+                for (var j = 0; j < palets[i].length; j++) {
+                    for (var k = 0; k < palets[i][j].length; k++) {
+                        palets[i][j][k] = 0;
+                    }
+                }
+            }
+
+            for(var i=0; i<tiendas.length; i++) {
+                for(var j=0; j<lineasAlbaran.length; j++) {
+                    bultosTiendas[i][j] = 0;
+                }
+            }
+
+            for(var i=0; i < locs.length; i++) {
+                var tiendaIndex = getTiendaIndexFromEan(locs[i].lugar);
+                var lineIndex = getLinAlbaranIndexFromCodart(locs[i].codart);
+                var udsBulto = lineasAlbaran[lineIndex].udsbul;
+                bultosTiendas[tiendaIndex][lineIndex] = locs[i].cantidad / udsBulto;
+            }
+            selectedTienda = 0;
+        }
+
+
+        function loadDataForTiendas() {
+            for(var i=0; i<palets.length; i++) {
+                for(var j=0; j<palets[i].length; j++) {
+                    palets[i][j] = new Array(tiendas.length);
+                }
+            }
+
+            bultosTiendas = new Array(tiendas.length);
+
+            for(var i=0; i< bultosTiendas.length; i++) {
+                bultosTiendas[i] = new Array(lineasAlbaran.length);
+            }
+
+            initializeSharedVariablesForTienda();
+        }
+
+        function showCargarExportadorErrors(data) {
+            if(data.success == false) {
+
+                if(data.hasOwnProperty('error')) {
+                    alert(data.error);
+                }
+                else alert("Ha habido un fallo al obtener los datos!");
+                return true;
+            }
+            if(data.data.albaran == null) {
+                alert("No existe ningún albarán de salida con estos datos!");
+                return true;
+            }
+
+            return false;
+        }
+
+        function getLinAlbaranIndexFromCodart(codart) {
+            for(var i=0; i<lineasAlbaran.length; i++) {
+                if(lineasAlbaran[i].codart == codart) {
+                    return i;
+                }
+            }
+            return null;
+        }
+
+        function getTiendaIndexFromEan(ean) {
+            for(var i=0; i<tiendas.length; i++) {
+                if(tiendas[i].ean == ean) {
+                    return i;
+                }
+            }
+            return null;
+        }
+
+        function resetSubmitButton() {
+            submitButton.prop("disabled", false);
+            submitButton.text("Comenzar");
+        }
+
+        function changeLine(line) {
+            var maxLine = lineasAlbaran.length - 1;
+
+            if(line >= 0 && line <= maxLine) {
+                selectedLine = line;
+                loadLineHtml();
+                setMaxBultosInput();
+            }
+        }
+
+        function changeTienda(selectTiendas) {
+            selectedTienda = Number(selectTiendas.val());
+            setMaxBultosInput();
+        }
+
+        function modificarBultosTienda(palet, linea, tienda, value) {
+            value = Number(value);
+            var dif = palets[palet][linea][tienda] - value;
+            palets[palet][linea][tienda] = value;
+            bultosTiendas[tienda][linea] += dif;
+            lineasAlbaran[linea].bultosRestantes += dif;
+            resetForm();
+            nextIteraction();
+            refreshVisor();
+        }
+
+        function modificarBultos(palet, linea, value) {
+            value = Number(value);
+            var dif = palets[palet][linea] - value;
+            palets[palet][linea] = value;
+            lineasAlbaran[linea].bultosRestantes += dif;
+            resetForm();
+            nextIteraction();
+        }
+
+        $('body').on('click', '#lineUp',function() {
+            changeLine(selectedLine-1);
+        });
+
+        $('body').on('click', '#lineDown',function() {
+            changeLine(selectedLine+1);
+        });
+
+        $('body').on('change', '#numTienda',function() {
+            changeTienda($(this));
+        });
+
+        $('body').on('change', '#numPalet',function() {
+            selectedPalet = selectPalets.val();
+        });
+
+        $('body').on('click', '.modificarCantidad', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if(hasTiendas) {
+                modificarBultosTienda($(this).attr('data-palet'), $(this).attr('data-linea'), $(this).attr('data-tienda'),  $(this).prev('input').val());
+            }
+            else {
+                modificarBultos($(this).attr('data-palet'), $(this).attr('data-linea'), $(this).prev('input').val());
+            }
+        });
+
+        $('body').on('click', '#resetLocal',function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if(confirm("¿Desea eliminar los cambios realizados?")) {
+                localStorage.removeItem("localData"+hashLocalData);
+                window.location.href = '{{url("/app/edi/exportar-edi")}}';
+            }
+        });
+
 
 
     </script>

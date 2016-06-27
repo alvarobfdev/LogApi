@@ -58,7 +58,7 @@ class EdiController extends Controller
     }
 
     public function getExportarEdi() {
-        return view("albaran.exportar-edi-tmp");
+        return view("albaran.exportar-edi");
     }
 
     public function getCheckNewOrders() {
