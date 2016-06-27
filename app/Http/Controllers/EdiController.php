@@ -95,6 +95,7 @@ class EdiController extends Controller
         $lineas = \Request::get("lineas");
         $bultosCapas = \Request::get("bultosCapas");
         $modify = \Request::get("modify");
+        $locs = \Request::get("locs");
 
 
 
@@ -105,6 +106,7 @@ class EdiController extends Controller
         $albaranEdi->tiendas_list_json = $tiendasList;
         $albaranEdi->lineas_json = $lineas;
         $albaranEdi->bultos_capa_json = $bultosCapas;
+        $albaranEdi->locs_json = $locs;
 
         $palets = json_decode($palets);
         $albaran = json_decode($albaran);
@@ -541,6 +543,7 @@ class EdiController extends Controller
             $result["data"]["tipoPalets"] = json_decode($albaranEdi->tipo_palets_json);
             $result["data"]["tiendasList"] = json_decode($albaranEdi->tiendas_list_json);
             $result["data"]["palets"] = json_decode($albaranEdi->palets_json);
+            $result["data"]["locs"] = json_decode($albaranEdi->locs_json);
 
             return $result;
         }

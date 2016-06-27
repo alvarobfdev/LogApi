@@ -9,7 +9,7 @@
     margin-bottom: 10px;
 }
 
-#capaVisorPalets .bulto {
+.bulto {
     background-image: url('../logival/img/ico-caja-carton.png?v=2');
     background-repeat: no-repeat;
     padding-left: 25px;
@@ -17,13 +17,32 @@
     margin-top: 5px;
 }
 
-#capaVisorPalets .tienda {
+.tienda {
     background-image: url('../logival/img/ico-tiend.png?v=2');
     background-repeat: no-repeat;
     padding-left: 25px;
     line-height: 24px;
     margin-top: 5px;
 }
+
+#capaVisorPalets .tienda.completed {
+    background-color: green;
+    color: white;
+}
+
+#capaVisorPalets .tienda.completed input{
+    color: black;
+}
+
+
+#capaVisorPalets .tienda.incomplete {
+    background-color: yellow;
+}
+
+
+
+
+
 
 #capaVisorPalets .bultoCapa {
     background-image: url('../logival/img/ico-cajas-palet.png?v=2');
