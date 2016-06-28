@@ -16,11 +16,11 @@ use Milon\Barcode\DNS1D;
 
 class BarcodeController extends Controller
 {
-    public function getEan13() {
+    public function getEan() {
         return view("barcode.barcode-form", ["title" => "Obtener EAN-13", "label"=>"Código EAN-13"]);
     }
 
-    public function postEan13() {
+    public function postEan() {
 
 
         $success = true;

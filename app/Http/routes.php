@@ -44,6 +44,8 @@ Route::group(['middleware' => ['web']], function () {
     Route::controller('/app', 'AppController');
     Route::controller('/barcode', 'BarcodeController');
     Route::controller('/amazon-mws', 'AmazonMWSController');
+    Route::controller('/barcode-reader', 'BarcodeReaderController');
+
 });
 
 
