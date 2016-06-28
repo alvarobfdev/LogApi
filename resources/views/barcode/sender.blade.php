@@ -4,7 +4,7 @@
 
             function sendForm() {
                 alert();
-                document.getElementById("form1").submit();
+                document.getElementById("form").submit();
             }
 
             setTimeout(function() { document.getElementById('code').focus(); document.getElementById("code").attachEvent("onchange", sendForm);}, 10);
