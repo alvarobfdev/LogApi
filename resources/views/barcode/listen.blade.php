@@ -19,6 +19,8 @@
 
 
         function poll() {
+            $('#error').text('');
+            $('#productInfo').hide();
             $.ajax({
                 url: "{{url('barcode-reader/listen-product-barcode')}}", success: function (result) {
 
