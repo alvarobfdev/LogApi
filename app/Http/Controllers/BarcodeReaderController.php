@@ -135,6 +135,7 @@ class BarcodeReaderController extends Controller {
                     $product->ubics = $dataOcup;
                 }
                 $result['data'] = $data;
+                $result['barcode'] = $barcode;
             } else {
                 $result['success'] = false;
                 $result['timeout'] = true;

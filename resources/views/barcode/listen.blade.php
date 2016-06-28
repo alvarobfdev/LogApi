@@ -1,6 +1,7 @@
 @extends('base')
 @section('content')
     <h4>Esperando lectura código...</h4>
+    <span style="color: red" id="error"></span>
     <div class="row">
         <div class="col-md-12" id="productInfo" style="display: none;">
             <h5 id="title">123456789</h5>
@@ -23,6 +24,9 @@
 
                     if(result.success && result.data.length > 0) {
                         showInfo(result.data[0]);
+                    }
+                    else {
+                        $('#error').text("El código de artículo '"+result.barcode+ "' no existe!");
                     }
                     poll();
                 }, error:poll, dataType:'JSON'
