@@ -2,26 +2,12 @@
     <head>
         <script>
 
-                function load() {
 
-
-                    document.getElementById("code").addEventListener('change', sendForm, false);
-                    alert(document.form.elements[0]);
-                    setTimeout(function () {
-                        document.getElementById('code').focus();
-                    }, 0);
-                    document.form.elements[0].focus();
-                    function sendForm() {
-                        document.getElementById("form").submit();
-                    }
-                }
-
-            setTimeout(load, 1);
 
         </script>
     </head>
-    <body>
-    <form method="post" id="form" name="form">
+    <body onload="window.scrollTo(0, 0); document.form1.elements[0].focus(); return false;">
+    <form method="post" id="form1" name="form1">
         <input id="code" type="text" name="code" onchange="sendForm()">
         <input type="hidden" name="_token" value="{{ csrf_token() }}">
     </form>
