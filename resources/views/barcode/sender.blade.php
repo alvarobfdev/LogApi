@@ -9,15 +9,7 @@
             }
 
             document.getElementById("code").addEventListener('change', sendForm, false);
-            setTimeout(function () {
-                document.getElementById('code').focus();
-            }, 0);
-            document.form.elements[0].focus();
-
-
-
-
-
+            
         </script>
     </head>
     <body onload="window.scrollTo(0, 0); document.form1.elements[0].focus(); return false;">
