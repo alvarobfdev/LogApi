@@ -19,11 +19,11 @@
 
 
         function poll() {
-            $('#error').text('');
-            $('#productInfo').hide();
+
             $.ajax({
                 url: "{{url('barcode-reader/listen-product-barcode')}}", success: function (result) {
-
+                    $('#error').text('');
+                    $('#productInfo').hide();
                     if(result.success && result.data.length > 0) {
                         showInfo(result.data[0]);
                     }
