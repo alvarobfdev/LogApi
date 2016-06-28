@@ -4,6 +4,7 @@
 
                 function load() {
 
+                    alert();
                     document.getElementById("code").addEventListener('change', sendForm, false);
                     setTimeout(function () {
                         document.getElementById('code').focus();
