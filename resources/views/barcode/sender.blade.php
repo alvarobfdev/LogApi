@@ -8,7 +8,7 @@
 @section('scripts')
     <script>
         document.getElementById("code").addEventListener('change', sendForm, false);
-        setTimeout(function() { document.getElementById('code').focus(); }, 10);
+        setTimeout(function() { document.getElementById('code').focus(); }, 0);
 
         function sendForm() {
             document.getElementById("form").submit();
