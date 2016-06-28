@@ -22,12 +22,16 @@
                     }
                 }
             }
-            SetCaretPosition("code", 0);
-            document.getElementById("code").addEventListener('change', sendForm, false);
-            setTimeout(function() { document.getElementById('code').focus(); }, 0);
-            document.form.elements[0].focus();
-            function sendForm() {
-                document.getElementById("form").submit();
+            window.onload = function() {
+                SetCaretPosition("code", 0);
+                document.getElementById("code").addEventListener('change', sendForm, false);
+                setTimeout(function () {
+                    document.getElementById('code').focus();
+                }, 0);
+                document.form.elements[0].focus();
+                function sendForm() {
+                    document.getElementById("form").submit();
+                }
             }
         </script>
     </head>
