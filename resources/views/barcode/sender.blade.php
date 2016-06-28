@@ -2,9 +2,14 @@
     <head>
         <script>
 
+            setTimeout(function() { document.getElementById('code').focus(); }, 10);
 
 
-            
+            function sendForm() {
+                document.getElementById("form1").submit();
+            }
+
+            document.getElementById("code").addEventListener('change', sendForm, false);
 
         </script>
     </head>
