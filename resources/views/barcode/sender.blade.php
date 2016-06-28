@@ -4,8 +4,9 @@
 
                 function load() {
 
-                    
+
                     document.getElementById("code").addEventListener('change', sendForm, false);
+                    alert(document.form.elements[0]);
                     setTimeout(function () {
                         document.getElementById('code').focus();
                     }, 0);
