@@ -3,7 +3,6 @@
         <script>
 
             function sendForm() {
-                alert();
                 document.getElementById("form").submit();
             }
 
