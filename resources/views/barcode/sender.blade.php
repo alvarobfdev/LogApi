@@ -3,10 +3,11 @@
         <script>
 
             function sendForm() {
+                alert();
                 document.getElementById("form1").submit();
             }
 
-            setTimeout(function() { document.getElementById('code').focus(); document.getElementById("code").addEventListener('change', sendForm, false);}, 10);
+            setTimeout(function() { document.getElementById('code').focus(); document.getElementById("code").attachEvent("onchange", sendForm);}, 10);
 
 
 
