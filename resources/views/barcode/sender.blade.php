@@ -2,16 +2,20 @@
     <head>
         <script>
 
-            window.onload = function() {
-                document.getElementById("code").addEventListener('change', sendForm, false);
-                setTimeout(function () {
-                    document.getElementById('code').focus();
-                }, 0);
-                document.form.elements[0].focus();
-                function sendForm() {
-                    document.getElementById("form").submit();
+                function load() {
+
+                    document.getElementById("code").addEventListener('change', sendForm, false);
+                    setTimeout(function () {
+                        document.getElementById('code').focus();
+                    }, 0);
+                    document.form.elements[0].focus();
+                    function sendForm() {
+                        document.getElementById("form").submit();
+                    }
                 }
-            }
+
+            setTimeout(load, 1);
+
         </script>
     </head>
     <body>
