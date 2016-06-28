@@ -8,6 +8,8 @@
 @section('scripts')
     <script>
         document.getElementById("code").addEventListener('change', sendForm, false);
+        document.getElementById("code").focus();
+
         function sendForm() {
             document.getElementById("form").submit();
         }
