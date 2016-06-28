@@ -107,6 +107,8 @@ class BarcodeReaderController extends Controller {
         }
         $this->close();
         $buf = preg_replace( "/\r|\n/", "", $buf );
+        $buf = ltrim($buf, '0');
+
         return $buf;
     }
 
