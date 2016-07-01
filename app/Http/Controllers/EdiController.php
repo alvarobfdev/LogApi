@@ -21,6 +21,7 @@ use App\EdiCabped;
 use App\EdiClientes;
 use App\EdiLinped;
 use App\EdiLoclped;
+use App\EquivalenciaCodigosPlataformas;
 use App\ProductsEdiModel;
 use Carbon\Carbon;
 use Faker\Provider\File;
@@ -1195,6 +1196,150 @@ class EdiController extends Controller
         dd(json_decode($pedidos[0]));
 
     }
+
+    public function getEroskiLabels($numcli, $ejerci, $numalb, $html = null) {
+
+        $locs = AlbaranEdiLocalizaciones::where("ejerci", $ejerci)
+            ->where("codcli", $numcli)
+            ->where("numalb", $numalb)
+            ->orderBy('lugar', 'ASC')
+            ->get();
+
+        $lineas = AlbaranEdiLineas::where("codcli", $numcli)
+            ->where("ejerci", $ejerci)
+            ->where("numalb", $numalb)
+            ->get();
+
+        $albaran = AlbaranEdi::where("codcli", $numcli)
+            ->where("ejerci", $ejerci)
+            ->where("numalb", $numalb)
+            ->first();
+
+        $proveedor = EdiClientes::where("cod_interno", $numcli)
+            ->where("cliente_logival", 1)
+            ->first();
+
+        $tiendasResult = EdiClientes::all();
+        $tiendas = [];
+        $labels = [];
+
+        foreach($tiendasResult as $tienda) {
+            $tiendas[$tienda->ean]['code'] = $tienda->cod_interno;
+            $tiendas[$tienda->ean]['nombre'] = $tienda->nombre;
+        }
+
+
+        foreach($lineas as $linea) {
+            foreach($locs as $loc) {
+                if($loc->idpalet == $linea->idpalet && $loc->idcaja == $linea->idcaja) {
+
+
+                    $udsLinea = $linea->uds_bulto;
+                    $labels[$loc->lugar]['tienda'] = $tiendas[$loc->lugar]['code']."<br>".
+                        $tiendas[$loc->lugar]['nombre'];
+
+                    if(!array_key_exists("bultos", $labels[$loc->lugar])) {
+
+                        $labels[$loc->lugar]['bultos'] = 0;
+                    }
+
+                    $labels[$loc->lugar]['bultos'] += $loc->cantidad / $udsLinea;
+
+                }
+            }
+        }
+
+
+
+
+
+        $data["proveedor"] = $proveedor->cod_eroski."<br>".$proveedor->nombre_fiscal;
+        $data["pedido"] = $albaran->pedido_ref;
+        $data["labels"] = $labels;
+
+        $view = view("etiquetas.eroski", $data);
+
+        if($html) {
+            return $view;
+        }
+        else return \PDF::loadHTML($view)
+            ->setPaper('a4')
+            ->setOption('margin-right', 0)
+            ->setOption('margin-bottom', 0)
+            ->setOption('margin-left', 0)
+            ->setOption('margin-top', 0)
+            ->stream();
+    }
+
+
+    public function getEstructuraEtiquetadoEci($numcli, $ejerci, $numalb, $html = null) {
+        $estructura = $this->estructuraEtiquetado($numcli, $ejerci, $numalb, "ECI");
+        return $this->getEstructuraView($estructura, $html);
+
+    }
+
+    public function getEstructuraEtiquetadoEroski($numcli, $ejerci, $numalb, $html = null) {
+        $estructura = $this->estructuraEtiquetado($numcli, $ejerci, $numalb, "EROSKI");
+        return $this->getEstructuraView($estructura, $html);
+    }
+
+    private function getEstructuraView($estructura, $html) {
+        $view = view("etiquetas.estructura", ["estructura"=>$estructura]);
+
+        if($html) {
+            return $view;
+        }
+        else return \PDF::loadHTML($view)
+            ->setPaper('a4')
+            ->stream();
+    }
+
+    private function estructuraEtiquetado($numcli, $ejerci, $numalb, $plataforma) {
+
+
+        $cajas = AlbaranEdiCajas::where("codcli", $numcli)
+            ->where("ejerci", $ejerci)
+            ->where("numalb", $numalb)->get();
+
+        $lineas = AlbaranEdiLineas::where("codcli", $numcli)
+            ->where("ejerci", $ejerci)
+            ->where("numalb", $numalb)->get();
+
+        $equivalencias =  EquivalenciaCodigosPlataformas::where("codcli", $numcli)
+            ->where("plataforma", $plataforma)->get();
+
+        $estructura = [];
+
+
+            foreach($cajas as $caja) {
+
+                $sscc_no_digit = substr($caja->sscc, 0, -1);
+                $sscc_no_digit = intval($sscc_no_digit);
+                $codProveedor = 0;
+                foreach ($lineas as $linea) {
+                    if ($linea->idpalet == $caja->idpalet && $linea->idcaja == $caja->idcaja) {
+                        $referenciaPlataforma = $linea->referencia;
+                        foreach ($equivalencias as $equivalencia) {
+                            if ($equivalencia->cod_plataforma == $referenciaPlataforma) {
+                                $codProveedor = $equivalencia->cod_proveedor;
+                            }
+                        }
+
+                    }
+                }
+
+                for ($i = 0; $i < $caja->cantidad; $i++) {
+                    $sscc = $sscc_no_digit + $i;
+                    $sscc = $sscc . $this->getSsccDigitControl($sscc);
+
+                    $estructura[$caja->idpalet][$sscc] = $codProveedor;
+                }
+            }
+
+
+        return $estructura;
+    }
+
 
 
 }

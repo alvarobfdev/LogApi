@@ -244,10 +244,6 @@ setlocale(LC_MONETARY, 'it_IT.UTF-8');
             margin-top: 0.1cm;
         }
 
-
-
-
-
         th {
             text-align: left;
             font-size: 0.35cm;

@@ -380,14 +380,6 @@ VALUES
         echo $result[0]."<br><br>";
     }
 
-    public function getTestSibari() {
-        $query = "SELECT * from linalbar where codcli = 170 and codart = '1022251637' and tipalb='S'";
-        $result = Ctsql::ctsqlExport($query);
-        $result = json_decode($result[0]);
-        foreach($result->data as $linea) {
-            var_dump($linea);
-            echo "<br><br>";
-        }
-    }
+
 }
 

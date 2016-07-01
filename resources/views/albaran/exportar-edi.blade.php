@@ -226,8 +226,11 @@
             request.done(function() {
                 alert("Fichero exportado con éxito!");
                 btnAddToPalet.text("Fichero exportado!");
-                if(!modify)
-                    btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.numalb+'" class="btn btn-primary">Albarán físico</a>');
+                if(!modify) {
+                    btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/' + albaran.codcli + '/' + albaran.ejerci + '/' + albaran.numalb + '" class="btn btn-primary">Albarán físico</a>');
+                    btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/estructura-etiquetado-eci')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.numalb+'" class="btn btn-primary">Matrículas etiquetas ECI</a>');
+
+                }
                 localStorage.removeItem("localData"+hashLocalData);
                 //window.location.reload();
             });
@@ -577,6 +580,8 @@
                 loadSavedData(data.data);
                 loadHtml();
                 btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.numalb+'" class="btn btn-primary">Albarán físico</a>');
+                btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/estructura-etiquetado-eci')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.numalb+'" class="btn btn-primary">Matrículas etiquetas ECI</a>');
+
                 refreshVisor();
                 nextIteraction();
                 return true;

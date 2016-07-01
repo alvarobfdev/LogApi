@@ -16,7 +16,8 @@
     <script>
 
 
-
+        var audioOk = new Audio("{{asset('sounds/beep-ok.wav')}}");
+        var audioError = new Audio("{{asset('sounds/beep-error.wav')}}");
 
         function poll() {
 
@@ -25,9 +26,11 @@
                     $('#error').text('');
                     $('#productInfo').hide();
                     if(result.success && result.data.length > 0) {
+                        audioOk.play();
                         showInfo(result.data[0]);
                     }
                     else {
+                        audioError.play();
                         $('#error').text("El código de artículo '"+result.barcode+ "' no existe!");
                     }
                     poll();
