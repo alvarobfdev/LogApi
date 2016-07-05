@@ -117,13 +117,25 @@ class EdiController extends Controller
         $bultosCapas = json_decode($bultosCapas);
         $pedido = new \StdClass();
 
-        if($modify == "true") {
-            $this->removeAlbaranEdi($albaran->codcli, $albaran->ejerci, $albaran->numalb);
+
+        $numSerie = "";
+        if($albaran->seralb != "") {
+            $numSerie = $albaran->seralb;
         }
+
+        $albaranAsArg = $numSerie.$albaran->ejerci.$albaran->codcli.$albaran->numalb;
+
+        if($modify == "true") {
+
+
+            $this->removeAlbaranEdi($albaran->codcli, $albaran->ejerci, $albaranAsArg);
+        }
+
+
 
         $this->getPedido($albaran->ejeped, $albaran->codcli, $albaran->numped, $pedido);
 
-        $albaranEdi->num_expedicion = $albaran->ejerci.$albaran->codcli.$albaran->numalb;
+        $albaranEdi->num_expedicion = $numSerie.$albaran->ejerci.$albaran->codcli.$albaran->numalb;
         $pedidoEdi = $this->getPedidoEdi($albaran->ejeped, $albaran->codcli, $albaran->numped);
 
         if($pedidoEdi->nodo == "YB1") {
@@ -134,9 +146,12 @@ class EdiController extends Controller
         }
 
 
+
         $albaranEdi->fecha_expedicion = Carbon::parse($albaran->fecalb)->format("YmdHi");
         $albaranEdi->fecha_entrega = Carbon::parse($pedido->fecent)->format("YmdHi");
-        $albaranEdi->num_albaran = $albaran->numalb;
+        $albaranEdi->num_albaran = $numSerie.$albaran->ejerci.$albaran->codcli.$albaran->numalb;
+        $albaranEdi->numalb = $numSerie.$albaran->ejerci.$albaran->codcli.$albaran->numalb;
+
         $albaranEdi->num_pedido = $albaran->numped;
         $albaranEdi->pedido_ref = $pedidoEdi->numped;
         $albaranEdi->origen = "8473098842005";
@@ -150,8 +165,6 @@ class EdiController extends Controller
 
         $albaranEdi->codcli = $albaran->codcli;
         $albaranEdi->ejerci = $albaran->ejerci;
-        $albaranEdi->numalb = $albaran->numalb;
-
         $paletsArr = array();
         $cajas = array();
         $lineasArr = array();
@@ -163,7 +176,7 @@ class EdiController extends Controller
 
             $albaranEdiPalets->codcli = $albaran->codcli;
             $albaranEdiPalets->ejerci = $albaran->ejerci;
-            $albaranEdiPalets->numalb = $albaran->numalb;
+            $albaranEdiPalets->numalb = $albaranEdi->num_albaran;
             $albaranEdiPalets->idpalet = $i+1;
             $albaranEdiPalets->tipoEmb = $tipoPalets[$i];
             $albaranEdiPalets->sscc = $this->getNextSscc($albaran->codcli);
@@ -180,7 +193,7 @@ class EdiController extends Controller
 
                     $albaranEdiCajas->codcli = $albaran->codcli;
                     $albaranEdiCajas->ejerci = $albaran->ejerci;
-                    $albaranEdiCajas->numalb = $albaran->numalb;
+                    $albaranEdiCajas->numalb = $albaranEdi->num_albaran;
                     $albaranEdiCajas->idpalet = $i + 1;
                     $albaranEdiCajas->idcaja = $j + 1;
                     $albaranEdiCajas->sscc = $this->getNextSscc($albaran->codcli, $numBultos);
@@ -198,6 +211,10 @@ class EdiController extends Controller
                     $query = "SELECT * FROM linalbar WHERE codemp=1 AND coddel = 1 AND codcli = ".$albaran->codcli." AND tipalb = 'S' AND ejerci = ".$albaran->ejerci.
                         "AND numalb='".$albaran->numalb . "' AND numlin = ".($j+1);
 
+                    if($numSerie != "") {
+                        $query .= " AND seralb = '$numSerie'";
+                    }
+
                     $articulos = Ctsql::ctsqlExport($query);
                     $articulos = json_decode($articulos[0]);
                     $articuloLinea = $articulos->data[0];
@@ -209,7 +226,7 @@ class EdiController extends Controller
 
                     $albaranEdiLineas->codcli = $albaran->codcli;
                     $albaranEdiLineas->ejerci = $albaran->ejerci;
-                    $albaranEdiLineas->numalb = $albaran->numalb;
+                    $albaranEdiLineas->numalb = $albaranEdi->num_albaran;
                     $albaranEdiLineas->idpalet = $i + 1;
                     $albaranEdiLineas->idcaja = $j + 1;
                     $albaranEdiLineas->numlin = 1;
@@ -232,7 +249,7 @@ class EdiController extends Controller
 
                             $albaranEdiLoc->codcli = $albaran->codcli;
                             $albaranEdiLoc->ejerci = $albaran->ejerci;
-                            $albaranEdiLoc->numalb = $albaran->numalb;
+                            $albaranEdiLoc->numalb = $albaranEdi->num_albaran;
                             $albaranEdiLoc->idpalet = $i + 1;
                             $albaranEdiLoc->idcaja = $j + 1;
                             $albaranEdiLoc->numlin = 1;
@@ -260,7 +277,7 @@ class EdiController extends Controller
 
         $albaranFisico->codcli = $albaran->codcli;
         $albaranFisico->ejerci = $albaran->ejerci;
-        $albaranFisico->num_albaran = $albaran->numalb;
+        $albaranFisico->num_albaran = $albaranEdi->num_albaran;
 
         $clienteEdi = EdiClientes::where("cod_interno", $albaran->codcli)->where("cliente_logival", 1)->first();
         $entrageEdi = EdiClientes::where("ean", $albaranEdi->receptor)->first();
@@ -268,7 +285,7 @@ class EdiController extends Controller
 
         $lineas = AlbaranEdiLineas::where("codcli", $albaranEdi->codcli)
             ->where("ejerci", $albaranEdi->ejerci)
-            ->where("numalb", $albaranEdi->numalb)->get();
+            ->where("numalb", $albaranEdi->num_albaran)->get();
 
         $numBultos = 0;
         foreach($lineas as $linea) {
@@ -277,7 +294,7 @@ class EdiController extends Controller
 
         $numPalets = AlbaranEdiPalets::where("codcli", $albaranEdi->codcli)
             ->where("ejerci", $albaranEdi->ejerci)
-            ->where("numalb", $albaranEdi->numalb)->count();
+            ->where("numalb", $albaranEdi->num_albaran)->count();
 
         if($albaranEdi->comprador == "8480010023213")
             $albaranFisico->codcli_proveedor = $clienteEdi->cod_eroski;
@@ -312,10 +329,10 @@ class EdiController extends Controller
         $albaranFisico->num_palets = $numPalets;
         $albaranFisico->save();
 
-        $this->createLineasAlbaranFisico($albaran, $lineasArr);
+        $this->createLineasAlbaranFisico($albaran, $lineasArr, $albaranEdi);
     }
 
-    private function createLineasAlbaranFisico($albaran, $lineasArr) {
+    private function createLineasAlbaranFisico($albaran, $lineasArr, $albaranEdi) {
 
         $lineasFis = [];
         foreach($lineasArr as $linea) {
@@ -333,7 +350,7 @@ class EdiController extends Controller
             $lineaFis = new AlbaranLineasFisicoEdi();
             $lineaFis->codcli = $albaran->codcli;
             $lineaFis->ejerci = $albaran->ejerci;
-            $lineaFis->num_albaran = $albaran->numalb;
+            $lineaFis->num_albaran = $albaranEdi->num_albaran;
             $lineaFis->referencia = $linea['referencia'];
             $lineaFis->bultos = $linea["bultos"];
             $lineaFis->uds_bulto = $linea["uds_bulto"];
@@ -487,15 +504,15 @@ class EdiController extends Controller
         $dom->formatOutput = TRUE;
         $formatted = $dom->saveXML();
         $datetime = Carbon::create()->format("Ymdhis");
-        file_put_contents("/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml", $formatted);
-        //file_put_contents(storage_path("app/tmp/").$datetime.".xml", $formatted);
-        exec("cd /ASPEDI && ./enviar_a_ediwin_asp.sh", $output);
+        //file_put_contents("/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml", $formatted);
+        file_put_contents(storage_path("app/tmp/").$datetime.".xml", $formatted);
+        //exec("cd /ASPEDI && ./enviar_a_ediwin_asp.sh", $output);
     }
 
-    private function getAlbaranEdi($cliente, $ejercicio, $numAlbaran) {
+    private function getAlbaranEdi($cliente, $ejercicio, $numAlbaran, $numSerie) {
         return AlbaranEdi::where("codcli", $cliente)
             ->where("ejerci", $ejercicio)
-            ->where("numalb", $numAlbaran)->first();
+            ->where("numalb", $numSerie.$ejercicio.$cliente.$numAlbaran)->first();
     }
 
     public function getAlbaranForEdi() {
@@ -505,6 +522,7 @@ class EdiController extends Controller
         $cliente = $in["numCliente"];
         $numAlbaran = $in["numAlbaran"];
         $camiones = $in["numCamiones"];
+        $numSerie = $in["numSerie"];
         $albaran = new \stdClass();
         $pedido = new \stdClass();
         $linAlbaran = new \stdClass();
@@ -513,7 +531,7 @@ class EdiController extends Controller
 
 
 
-        if(!$this->getAlbaran($ejercicio, $cliente, $numAlbaran, $albaran)) {
+        if(!$this->getAlbaran($ejercicio, $cliente, $numAlbaran, $albaran, $numSerie)) {
             return json_encode($albaran);
         }
 
@@ -521,7 +539,7 @@ class EdiController extends Controller
             return json_encode($albaran);
         }
 
-        if(!$this->getLinAlbaran($ejercicio, $cliente, $numAlbaran, $linAlbaran)) {
+        if(!$this->getLinAlbaran($ejercicio, $cliente, $numAlbaran, $linAlbaran, $numSerie)) {
             return json_encode($linAlbaran);
         }
 
@@ -534,7 +552,7 @@ class EdiController extends Controller
             return json_encode($products);
         }
 
-        if($albaranEdi = $this->getAlbaranEdi($cliente, $ejercicio, $numAlbaran)) {
+        if($albaranEdi = $this->getAlbaranEdi($cliente, $ejercicio, $numAlbaran, $numSerie)) {
             $result["success"] = true;
             $result["modify"] = true;
             $result["data"]["lin_albaran"] = json_decode($albaranEdi->lineas_json);
@@ -765,10 +783,13 @@ class EdiController extends Controller
         return $controlDigit;
     }
 
-    private function getAlbaran($ejercicio, $cliente, $numAlbaran, &$albaran) {
+    private function getAlbaran($ejercicio, $cliente, $numAlbaran, &$albaran, $numSerie) {
 
         $query = "SELECT * FROM albaran where codemp='1' and coddel='1' and codcli='$cliente' and tipalb='S' and ejerci='$ejercicio' and numalb='$numAlbaran'";
 
+        if($numSerie != "") {
+            $query .= " AND seralb = '$numSerie'";
+        }
 
         $albaranJson = Ctsql::ctsqlExport($query);
         $albaran = json_decode($albaranJson[0]);
@@ -808,8 +829,14 @@ class EdiController extends Controller
         return true;
     }
 
-    private function getLinAlbaran($ejercicio, $cliente, $numAlbaran, &$linAlbaran) {
-        $query = "SELECT * FROM linalbar where codemp='1' and coddel='1' and codcli='$cliente' and tipalb='S' and ejerci='$ejercicio' and numalb='$numAlbaran' ORDER BY horizo ASC, vertic ASC";
+    private function getLinAlbaran($ejercicio, $cliente, $numAlbaran, &$linAlbaran, $numSerie) {
+
+        $query = "";
+        if($numSerie != "") {
+            $query = " AND seralb = '$numSerie' ";
+        }
+
+        $query = "SELECT * FROM linalbar where codemp='1' and coddel='1' and codcli='$cliente' and tipalb='S' and ejerci='$ejercicio' and numalb='$numAlbaran' $query ORDER BY horizo ASC, vertic ASC";
         $linAlbarJson = Ctsql::ctsqlExport($query);
         $linAlbaran = json_decode($linAlbarJson[0]);
 

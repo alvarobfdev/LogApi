@@ -30,6 +30,15 @@
 
                 <!-- Text input-->
                 <div class="form-group">
+                    <label class="col-md-4 control-label" for="numSerie">Núm. Serie</label>
+                    <div class="col-md-4">
+                        <input id="numSerie" name="numSerie" type="text" placeholder="Inserte número serie" class="form-control input-md"  value="">
+
+                    </div>
+                </div>
+
+                <!-- Text input-->
+                <div class="form-group">
                     <label class="col-md-4 control-label" for="numAlbaran">Núm. Albaran</label>
                     <div class="col-md-4">
                         <input id="numAlbaran" name="numAlbaran" type="text" placeholder="Inserte número albarán" class="form-control input-md" required="" value="1">
@@ -227,8 +236,8 @@
                 alert("Fichero exportado con éxito!");
                 btnAddToPalet.text("Fichero exportado!");
                 if(!modify) {
-                    btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/' + albaran.codcli + '/' + albaran.ejerci + '/' + albaran.numalb + '" class="btn btn-primary">Albarán físico</a>');
-                    btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/estructura-etiquetado-eci')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.numalb+'" class="btn btn-primary">Matrículas etiquetas ECI</a>');
+                    btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.seralb+albaran.ejerci+albaran.codcli+albaran.numalb+'" class="btn btn-primary">Albarán físico</a>');
+                    btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/estructura-etiquetado-eci')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.seralb+albaran.ejerci+albaran.codcli+albaran.numalb+'" class="btn btn-primary">Matrículas etiquetas ECI</a>');
 
                 }
                 localStorage.removeItem("localData"+hashLocalData);
@@ -579,8 +588,8 @@
                 modify = true;
                 loadSavedData(data.data);
                 loadHtml();
-                btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.numalb+'" class="btn btn-primary">Albarán físico</a>');
-                btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/estructura-etiquetado-eci')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.numalb+'" class="btn btn-primary">Matrículas etiquetas ECI</a>');
+                btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.seralb+albaran.ejerci+albaran.codcli+albaran.numalb+'" class="btn btn-primary">Albarán físico</a>');
+                btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/estructura-etiquetado-eci')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.seralb+albaran.ejerci+albaran.codcli+albaran.numalb+'" class="btn btn-primary">Matrículas etiquetas ECI</a>');
 
                 refreshVisor();
                 nextIteraction();
