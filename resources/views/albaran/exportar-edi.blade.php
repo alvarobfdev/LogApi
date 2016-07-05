@@ -235,6 +235,9 @@
             request.done(function() {
                 alert("Fichero exportado con éxito!");
                 btnAddToPalet.text("Fichero exportado!");
+                if(albaran.seralb == " ") {
+                    albaran.seralb = "";
+                }
                 if(!modify) {
                     btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.seralb+albaran.ejerci+albaran.codcli+albaran.numalb+'" class="btn btn-primary">Albarán físico</a>');
                     btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/estructura-etiquetado-eci')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.seralb+albaran.ejerci+albaran.codcli+albaran.numalb+'" class="btn btn-primary">Matrículas etiquetas ECI</a>');
