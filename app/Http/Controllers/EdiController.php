@@ -504,9 +504,9 @@ class EdiController extends Controller
         $dom->formatOutput = TRUE;
         $formatted = $dom->saveXML();
         $datetime = Carbon::create()->format("Ymdhis");
-        //file_put_contents("/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml", $formatted);
-        file_put_contents(storage_path("app/tmp/").$datetime.".xml", $formatted);
-        //exec("cd /ASPEDI && ./enviar_a_ediwin_asp.sh", $output);
+        file_put_contents("/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml", $formatted);
+        //file_put_contents(storage_path("app/tmp/").$datetime.".xml", $formatted);
+        exec("cd /ASPEDI && ./enviar_a_ediwin_asp.sh", $output);
     }
 
     private function getAlbaranEdi($cliente, $ejercicio, $numAlbaran, $numSerie) {
