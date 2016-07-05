@@ -585,6 +585,9 @@
             if(!data.modify)
                 return false;
             else {
+                if(albaran.seralb == " ") {
+                    albaran.seralb = "";
+                }
                 modify = true;
                 loadSavedData(data.data);
                 loadHtml();
