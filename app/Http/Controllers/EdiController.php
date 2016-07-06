@@ -155,7 +155,11 @@ class EdiController extends Controller
         $albaranEdi->num_pedido = $albaran->numped;
         $albaranEdi->pedido_ref = $pedidoEdi->numped;
         $albaranEdi->origen = "8473098842005";
-        $albaranEdi->destino = $pedidoEdi->comprador;
+        $comprador = EdiClientes::where("ean", $pedidoEdi->comprador)->first();
+        if($comprador && $comprador->nombre_fiscal=="EL CORTE INGLÉS, S.A.") {
+            $albaranEdi->destino = "8422416000016";
+        }
+        else $albaranEdi->destino = $pedidoEdi->comprador;
         $albaranEdi->proveedor = $pedidoEdi->vendedor;
         $albaranEdi->comprador = $pedidoEdi->comprador;
         $albaranEdi->departamento = $pedidoEdi->depto;
@@ -376,7 +380,7 @@ class EdiController extends Controller
         $cab->addAttribute("PROVEEDOR", $albaranEdi->proveedor);
         $cab->addAttribute("COMPRADOR", $albaranEdi->comprador);
         $cab->addAttribute("RECEPTOR", $albaranEdi->receptor);
-        $cab->addAttribute("DEPTO", $albaranEdi->departamento);
+        $cab->addAttribute("DPTO", $albaranEdi->departamento);
         $cab->addAttribute("TOTQTY", $albaranEdi->totqty);
         $cab->addAttribute("IDENTIF", $albaranEdi->identif);
         $cab->addAttribute("MATRIC", $albaranEdi->matricula_transportista);

@@ -210,49 +210,52 @@
 
         function finalizarEdi() {
 
-            btnAddToPalet.text("Exportando EDI...")
-            btnAddToPalet.addClass("disabled");
+            if(modify && confirm("¿Desea volver a exportar el Albarán EDI?\nATENCIÓN: Se actualizarán las matrículas" +
+                            " SSCC de los bultos.")) {
+                btnAddToPalet.text("Exportando EDI...")
+                btnAddToPalet.addClass("disabled");
 
-            var request = $.ajax({
-                url: '{{url('app/edi/finish-export-edi')}}',
-                type: 'post',
-                data: {
-                    'albaran': JSON.stringify(albaran),
-                    'palets':JSON.stringify(palets),
-                    'tipoPalets':JSON.stringify(tipoPalets),
-                    'tiendasList':JSON.stringify(tiendas),
-                    'lineas':JSON.stringify(lineasAlbaran),
-                    'bultosCapas':JSON.stringify(bultosCapas),
-                    'locs':JSON.stringify(locs),
-                    'modify':modify,
-                },
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',   //If your header name has spaces or any other char not appropriate
-                },
-                dataType: 'json'
-            });
+                var request = $.ajax({
+                    url: '{{url('app/edi/finish-export-edi')}}',
+                    type: 'post',
+                    data: {
+                        'albaran': JSON.stringify(albaran),
+                        'palets': JSON.stringify(palets),
+                        'tipoPalets': JSON.stringify(tipoPalets),
+                        'tiendasList': JSON.stringify(tiendas),
+                        'lineas': JSON.stringify(lineasAlbaran),
+                        'bultosCapas': JSON.stringify(bultosCapas),
+                        'locs': JSON.stringify(locs),
+                        'modify': modify,
+                    },
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',   //If your header name has spaces or any other char not appropriate
+                    },
+                    dataType: 'json'
+                });
 
-            request.done(function() {
-                alert("Fichero exportado con éxito!");
-                btnAddToPalet.text("Fichero exportado!");
-                if(albaran.seralb == " ") {
-                    albaran.seralb = "";
-                }
-                if(!modify) {
-                    btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.seralb+albaran.ejerci+albaran.codcli+albaran.numalb+'" class="btn btn-primary">Albarán físico</a>');
-                    btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/estructura-etiquetado-eci')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.seralb+albaran.ejerci+albaran.codcli+albaran.numalb+'" class="btn btn-primary">Matrículas etiquetas ECI</a>');
+                request.done(function () {
+                    alert("Fichero exportado con éxito!");
+                    btnAddToPalet.text("Fichero exportado!");
+                    if (albaran.seralb == " ") {
+                        albaran.seralb = "";
+                    }
+                    if (!modify) {
+                        btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/' + albaran.codcli + '/' + albaran.ejerci + '/' + albaran.seralb + albaran.ejerci + albaran.codcli + albaran.numalb + '" class="btn btn-primary">Albarán físico</a>');
+                        btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/estructura-etiquetado-eci')}}/' + albaran.codcli + '/' + albaran.ejerci + '/' + albaran.seralb + albaran.ejerci + albaran.codcli + albaran.numalb + '" class="btn btn-primary">Matrículas etiquetas ECI</a>');
 
-                }
-                localStorage.removeItem("localData"+hashLocalData);
-                //window.location.reload();
-            });
+                    }
+                    localStorage.removeItem("localData" + hashLocalData);
+                    //window.location.reload();
+                });
 
-            request.fail(function() {
-                alert("Fallo al exportar fichero. Consulte a un técnico");
-                btnAddToPalet.text("Finalizar exportación");
-                btnAddToPalet.removeClass("disabled");
+                request.fail(function () {
+                    alert("Fallo al exportar fichero. Consulte a un técnico");
+                    btnAddToPalet.text("Finalizar exportación");
+                    btnAddToPalet.removeClass("disabled");
 
-            });
+                });
+            }
 
         }
 
