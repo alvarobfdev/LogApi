@@ -210,8 +210,8 @@
 
         function finalizarEdi() {
 
-            if(modify && confirm("¿Desea volver a exportar el Albarán EDI?\nATENCIÓN: Se actualizarán las matrículas" +
-                            " SSCC de los bultos.")) {
+            if((modify && confirm("¿Desea volver a exportar el Albarán EDI?\nATENCIÓN: Se actualizarán las matrículas" +
+                            " SSCC de los bultos.")) || !modify) {
                 btnAddToPalet.text("Exportando EDI...")
                 btnAddToPalet.addClass("disabled");
 
