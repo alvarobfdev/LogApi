@@ -240,9 +240,12 @@
                     if (albaran.seralb == " ") {
                         albaran.seralb = "";
                     }
+                    var ejerci = albaran.ejerci;
+                    ejerci = ejerci.toString().slice(-2);
                     if (!modify) {
-                        btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/' + albaran.codcli + '/' + albaran.ejerci + '/' + albaran.seralb + albaran.ejerci + albaran.codcli + albaran.numalb + '" class="btn btn-primary">Albarán físico</a>');
-                        btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/estructura-etiquetado-eci')}}/' + albaran.codcli + '/' + albaran.ejerci + '/' + albaran.seralb + albaran.ejerci + albaran.codcli + albaran.numalb + '" class="btn btn-primary">Matrículas etiquetas ECI</a>');
+                        btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/' + albaran.codcli + '/' + albaran.ejerci + '/' + albaran.seralb + ejerci + albaran.numalb + '" class="btn btn-primary">Albarán físico</a>');
+                        btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/estructura-etiquetado-eci')}}/' + albaran.codcli + '/' + albaran.ejerci + '/' + albaran.seralb + ejerci + albaran.numalb + '" class="btn btn-primary">Matrículas etiquetas ECI</a>');
+                        btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/eroski-labels')}}/' + albaran.codcli + '/' + albaran.ejerci + '/' + albaran.seralb + ejerci + albaran.numalb + '" class="btn btn-primary">Etiquetas Eroski</a>');
 
                     }
                     localStorage.removeItem("localData" + hashLocalData);
@@ -594,11 +597,16 @@
                 if(albaran.seralb == " ") {
                     albaran.seralb = "";
                 }
+
+                var ejerci = albaran.ejerci;
+                ejerci = ejerci.toString().slice(-2);
+
                 modify = true;
                 loadSavedData(data.data);
                 loadHtml();
-                btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.seralb+albaran.ejerci+albaran.codcli+albaran.numalb+'" class="btn btn-primary">Albarán físico</a>');
-                btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/estructura-etiquetado-eci')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.seralb+albaran.ejerci+albaran.codcli+albaran.numalb+'" class="btn btn-primary">Matrículas etiquetas ECI</a>');
+                btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/albaran-pdf')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.seralb+ejerci+albaran.numalb+'" class="btn btn-primary">Albarán físico</a>');
+                btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/estructura-etiquetado-eci')}}/'+albaran.codcli+'/'+albaran.ejerci+'/'+albaran.seralb+ejerci+albaran.numalb+'" class="btn btn-primary">Matrículas etiquetas ECI</a>');
+                btnAddToPalet.after(' <a target="_blank" href="{{url('app/edi/eroski-labels')}}/' + albaran.codcli + '/' + albaran.ejerci + '/' + albaran.seralb + ejerci + albaran.numalb + '" class="btn btn-primary">Etiquetas Eroski</a>');
 
                 refreshVisor();
                 nextIteraction();

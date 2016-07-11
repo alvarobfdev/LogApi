@@ -123,19 +123,20 @@ class EdiController extends Controller
             $numSerie = $albaran->seralb;
         }
 
-        $albaranAsArg = $numSerie.$albaran->ejerci.$albaran->codcli.$albaran->numalb;
+        $ejerShort = substr($albaran->ejerci, -2);
+
+
+        $albaranAsArg = $numSerie.$ejerShort.$albaran->numalb;
 
         if($modify == "true") {
-
-
-            $this->removeAlbaranEdi($albaran->codcli, $albaran->ejerci, $albaranAsArg);
+            $this->removeAlbaranEdi($albaran->codcli, $ejerShort, $albaranAsArg);
         }
 
 
 
         $this->getPedido($albaran->ejeped, $albaran->codcli, $albaran->numped, $pedido);
 
-        $albaranEdi->num_expedicion = $numSerie.$albaran->ejerci.$albaran->codcli.$albaran->numalb;
+        $albaranEdi->num_expedicion = $numSerie.$ejerShort.$albaran->numalb;
         $pedidoEdi = $this->getPedidoEdi($albaran->ejeped, $albaran->codcli, $albaran->numped);
 
         if($pedidoEdi->nodo == "YB1") {
@@ -149,8 +150,8 @@ class EdiController extends Controller
 
         $albaranEdi->fecha_expedicion = Carbon::parse($albaran->fecalb)->format("YmdHi");
         $albaranEdi->fecha_entrega = Carbon::parse($pedido->fecent)->format("YmdHi");
-        $albaranEdi->num_albaran = $numSerie.$albaran->ejerci.$albaran->codcli.$albaran->numalb;
-        $albaranEdi->numalb = $numSerie.$albaran->ejerci.$albaran->codcli.$albaran->numalb;
+        $albaranEdi->num_albaran = $numSerie.$ejerShort.$albaran->numalb;
+        $albaranEdi->numalb = $numSerie.$ejerShort.$albaran->numalb;
 
         $albaranEdi->num_pedido = $albaran->numped;
         $albaranEdi->pedido_ref = $pedidoEdi->numped;
@@ -514,9 +515,14 @@ class EdiController extends Controller
     }
 
     private function getAlbaranEdi($cliente, $ejercicio, $numAlbaran, $numSerie) {
+
+        $ejerShort = substr($ejercicio, -2);
+        
+
+
         return AlbaranEdi::where("codcli", $cliente)
             ->where("ejerci", $ejercicio)
-            ->where("numalb", $numSerie.$ejercicio.$cliente.$numAlbaran)->first();
+            ->where("numalb", $numSerie.$ejerShort.$numAlbaran)->first();
     }
 
     public function getAlbaranForEdi() {
@@ -598,6 +604,11 @@ class EdiController extends Controller
          ") );
 
 
+        $ejerShort = substr($albaran->ejerci, -2);
+
+        $locs_registered = \DB::connection("mysql")->select( \DB::raw("SELECT * FROM albaran_edi_localizaciones WHERE numalb LIKE '%$ejerShort$numAlbaran' ") );
+
+
 
         $result["data"]["tiendasList"] = array();
 
@@ -621,6 +632,11 @@ class EdiController extends Controller
             $linped = EdiLinped::where("cabped_id", $pedidoEdi->id)->where("clave2", $loc->clave2)->first();
             $loc->prod = $linped->refean;
             $loc->codart = $this->getCodigoArticulo($linped->refean, $products);
+            foreach($locs_registered as $loc_registered) {
+                if($loc_registered->lugar == $loc->lugar) {
+                    $loc->cantidad -= $loc_registered->cantidad;
+                }
+            }
         }
 
         if(count($faltanTiendas) > 0) {
