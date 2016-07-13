@@ -19,6 +19,7 @@ class Albaran extends Model
     public static $adminValidation = [
         'tipalb' => 'required|in:E,S',
         'seralb' => 'string',
+        'ejealb' => 'required|integer',
         'numalb' => 'required|array',
         'fecent' => 'date_format:Y-m-d',
         'codter' => 'string',
@@ -81,7 +82,9 @@ class Albaran extends Model
     ];
 
 
-    public function lineasPedido() {
-        return $this->embedsMany('App\RestApiModels\LineasPedido');
+    public function lineasAlbaran() {
+        return $this->embedsMany('App\RestApiModels\LineasAlbaran');
     }
+
+
 }

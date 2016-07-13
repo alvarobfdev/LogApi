@@ -13,7 +13,9 @@ use App\Artic;
 use App\Ctsql;
 use App\EdiCabped;
 use App\ProductsEdiModel;
+use App\RestApiModels\Albaran;
 use App\RestApiModels\Cliente;
+use App\RestApiModels\LineasAlbaran;
 use App\RestApiModels\Pedido;
 use App\RestApiModels\User;
 use App\WoocommerceApi;
@@ -380,6 +382,50 @@ VALUES
         echo $result[0]."<br><br>";
     }
 
+    public function getImportAlbaranes() {
+
+        $limit = 0;
+        $albaranesMongo = [];
+
+        do {
+            $result = Ctsql::ctsqlExport("SELECT * FROM albaran WHERE ejerci = 2016 LIMIT $limit, 100");
+            $albaranes = json_decode($result[0])->data;
+            foreach($albaranes as $albaran) {
+                $albaranMongo = new Albaran();
+                foreach(get_object_vars($albaran) as $attr => $val) {
+                    $albaranMongo->$attr = $val;
+                }
+                $albaranMongo->save();
+                $albaranesMongo[] = $albaranMongo;
+            }
+            $limit += 100;
+        }while(count($albaranes)>0);
+
+
+        $limit = 0;
+
+        do {
+            $result = Ctsql::ctsqlExport("SELECT * FROM linalbar WHERE ejerci = 2016 LIMIT $limit, 100");
+            $linsalbar = json_decode($result[0])->data;
+            foreach($linsalbar as $linalbar) {
+                foreach($albaranesMongo as $albaranMongo) {
+                    if($albaranMongo->codemp == $linalbar->codemp && $albaranMongo->coddel == $linalbar->coddel
+                        && $albaranMongo->codcli == $linalbar->codcli && $albaranMongo->tipalb == $linalbar->tipalb &&
+                        $albaranMongo->seralb == $linalbar->seralb && $albaranMongo->ejerci == $linalbar->ejerci &&
+                        $albaranMongo->numalb == $linalbar->numalb)
+                    {
+                        $linalbarMongo = new LineasAlbaran();
+                        foreach(get_object_vars($linalbarMongo) as $attr => $val) {
+                            $linalbarMongo->$attr = $val;
+                        }
+                        $albaranMongo->lineasAlbaran()->save($linalbarMongo);
+                    }
+                }
+            }
+            $limit += 100;
+        }while(count($linsalbar) > 0);
+
+    }
 
 }
 

@@ -509,9 +509,9 @@ class EdiController extends Controller
         $dom->formatOutput = TRUE;
         $formatted = $dom->saveXML();
         $datetime = Carbon::create()->format("Ymdhis");
-        file_put_contents("/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml", $formatted);
-        //file_put_contents(storage_path("app/tmp/").$datetime.".xml", $formatted);
-        exec("cd /ASPEDI && ./enviar_a_ediwin_asp.sh", $output);
+        //file_put_contents("/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml", $formatted);
+        file_put_contents(storage_path("app/tmp/").$datetime.".xml", $formatted);
+        //exec("cd /ASPEDI && ./enviar_a_ediwin_asp.sh", $output);
     }
 
     private function getAlbaranEdi($cliente, $ejercicio, $numAlbaran, $numSerie) {
@@ -1244,6 +1244,94 @@ class EdiController extends Controller
 
     }
 
+    public function getEroskiLabelsFromPedido($codcli, $ejercicio, $pedido_base, $html = null) {
+
+        $pedidoEdi = $this->getPedidoEdi($ejercicio, $codcli, $pedido_base);
+
+        $locs = EdiLoclped::where("cabped_id", $pedidoEdi->id)->get();
+
+        $lineas = EdiLinped::where("cabped_id", $pedidoEdi->id)->get();
+
+        $artic = Ctsql::ctsqlExport("SELECT * FROM artic WHERE codcli = $codcli");
+
+        $artics = json_decode($artic[0]);
+
+        $artics = $artics->data;
+
+        $proveedor = EdiClientes::where("cod_interno", $codcli)
+            ->where("cliente_logival", 1)
+            ->first();
+
+        $tiendasResult = EdiClientes::all();
+        $tiendas = [];
+        $labels = [];
+
+        foreach($tiendasResult as $tienda) {
+            $tiendas[$tienda->ean]['code'] = $tienda->cod_interno;
+            $tiendas[$tienda->ean]['nombre'] = $tienda->nombre;
+        }
+
+
+
+
+        foreach($lineas as $linea) {
+            foreach($locs as $loc) {
+                if($linea->clave2 == $loc->clave2) {
+                    $udsLinea = 1;
+                    foreach($artics as $artic) {
+                        if($artic->codart == $linea->refcli) {
+                            $nameArtic = $artic->descri;
+                            $udsBulto = substr($nameArtic, -3);
+                            $udsLinea = explode("/", $udsBulto)[1];
+
+                        }
+                    }
+                    $labels[$loc->lugar]['codTienda'] = $tiendas[$loc->lugar]['code'];
+                    $labels[$loc->lugar]['tienda'] = $tiendas[$loc->lugar]['code']."<br>".
+                        $tiendas[$loc->lugar]['nombre'];
+
+                    if(!array_key_exists("bultos", $labels[$loc->lugar])) {
+
+                        $labels[$loc->lugar]['bultos'] = 0;
+                    }
+
+                    $labels[$loc->lugar]['bultos'] += $loc->cantidad / $udsLinea;
+                }
+
+            }
+        }
+
+
+
+        foreach($labels as $index=>$label) {
+            if($label['bultos'] > 10) {
+                unset($labels[$index]);
+            }
+            else $tiendasNumber[$index] = $labels[$index]["codTienda"];
+        }
+
+        array_multisort($tiendasNumber, SORT_ASC, $labels);
+
+
+        $data["proveedor"] = $proveedor->cod_eroski."<br>".$proveedor->nombre_fiscal;
+        $data["pedido"] = $pedidoEdi->numped;
+        $data["labels"] = $labels;
+
+        $view = view("etiquetas.eroski", $data);
+
+        if($html) {
+            return $view;
+        }
+        else return \PDF::loadHTML($view)
+            ->setPaper('a4')
+            ->setOption('margin-right', 0)
+            ->setOption('margin-bottom', 0)
+            ->setOption('margin-left', 0)
+            ->setOption('margin-top', 0)
+            ->stream();
+
+    }
+
     public function getEroskiLabels($numcli, $ejerci, $numalb, $html = null) {
 
         $locs = AlbaranEdiLocalizaciones::where("ejerci", $ejerci)
@@ -1385,6 +1473,108 @@ class EdiController extends Controller
 
 
         return $estructura;
+    }
+
+    public function getBuildEroskiLabels($codcli = null , $ejercicio = null, $pedido_base = null, $html = null) {
+
+        if(!$codcli) {
+            return view("etiquetas.buildEroski");
+        }
+
+        $pedidoEdi = $this->getPedidoEdi($ejercicio, $codcli, $pedido_base);
+
+        $locs = EdiLoclped::where("cabped_id", $pedidoEdi->id)->get();
+
+        $lineas = EdiLinped::where("cabped_id", $pedidoEdi->id)->get();
+
+        $artic = Ctsql::ctsqlExport("SELECT * FROM artic WHERE codcli = $codcli");
+
+        $artics = json_decode($artic[0]);
+
+        $artics = $artics->data;
+
+        $tiendasResult = EdiClientes::all();
+        $tiendas = [];
+        $labels = [];
+
+        foreach($tiendasResult as $tienda) {
+            $tiendas[$tienda->ean]['code'] = $tienda->cod_interno;
+            $tiendas[$tienda->ean]['nombre'] = $tienda->nombre;
+        }
+
+
+
+
+        foreach($lineas as $linea) {
+            foreach($locs as $loc) {
+                if($linea->clave2 == $loc->clave2) {
+                    $udsLinea = 1;
+                    foreach($artics as $artic) {
+                        if($artic->codart == $linea->refcli) {
+                            $nameArtic = $artic->descri;
+                            $udsBulto = substr($nameArtic, -3);
+                            $udsLinea = explode("/", $udsBulto)[1];
+
+                        }
+                    }
+                    $labels[$loc->lugar]['codTienda'] = $tiendas[$loc->lugar]['code'];
+                    $labels[$loc->lugar]['tienda'] = $tiendas[$loc->lugar]['code']."<br>".
+                        $tiendas[$loc->lugar]['nombre'];
+
+                    if(!array_key_exists("bultos", $labels[$loc->lugar])) {
+
+                        $labels[$loc->lugar]['bultos'] = 0;
+                    }
+
+                    $labels[$loc->lugar]['bultos'] += $loc->cantidad / $udsLinea;
+                }
+
+            }
+        }
+
+
+
+        foreach($labels as $index=>$label) {
+            $tiendasNumber[$index] = $labels[$index]["codTienda"];
+        }
+
+        array_multisort($tiendasNumber, SORT_ASC, $labels);
+
+        $data["labels"] = $labels;
+
+        return view("etiquetas.buildEroski", $data);
+    }
+
+    public function postBuildEroskiLabels($codcli = null , $ejercicio = null, $pedido_base = null) {
+        $pedidoEdi = $this->getPedidoEdi($ejercicio, $codcli, $pedido_base);
+        $tiendas = \Request::get("tiendas");
+        $numBultos = \Request::get("numBultos");
+        $nombresTiendas = \Request::get("nombresTiendas");
+        $labels = [];
+
+        $proveedor = EdiClientes::where("cod_interno", $codcli)
+            ->where("cliente_logival", 1)
+            ->first();
+
+        foreach($tiendas as $index=>$codTienda) {
+            $labels[$index]["tienda"] = $nombresTiendas[$index];
+            $labels[$index]["bultos"] = $numBultos[$index];
+        }
+
+        $data["proveedor"] = $proveedor->cod_eroski."<br>".$proveedor->nombre_fiscal;
+        $data["pedido"] = $pedidoEdi->numped;
+        $data["labels"] = $labels;
+
+        $view = view("etiquetas.eroski", $data);
+
+
+        return \PDF::loadHTML($view)
+            ->setPaper('a4')
+            ->setOption('margin-right', 0)
+            ->setOption('margin-bottom', 0)
+            ->setOption('margin-left', 0)
+            ->setOption('margin-top', 0)
+            ->stream();
     }
 
 
