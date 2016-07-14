@@ -71,7 +71,7 @@
                                     <td>
                                         <input type="checkbox" name="tiendas[{{$iCamion}}][]" value="{{$tienda["ean"]}}">
                                     </td>
-                                    <td style="padding-left: 10px;">
+                                    <td style="padding-left: 10px; cursor: pointer;" class="tiendaClick">
                                         <div class="tienda">
                                             <span>{!!$tienda["tienda"]!!}</span>
                                         </div>
@@ -120,6 +120,14 @@
                 e.preventDefault();
                 document.location.href = '{{url("app/edi/build-camiones-tiendas")}}/'+$('#numCliente').val()+'/'+$('#ejercicio').val()+'/'+$('#pedido').val()+'/'+$('#numCamiones').val();
                 return false;
+            });
+
+            $('.tiendaClick').on("click", function(e) {
+                var checkbox = $(this).prev().find(":checkbox");
+                if(checkbox.is(":checked")) {
+                    checkbox.prop("checked", false);
+                }
+                else checkbox.prop("checked", true);
             });
         })
     </script>
