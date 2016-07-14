@@ -1634,14 +1634,19 @@ class EdiController extends Controller
 
         $pedidoEdi = $this->getPedidoEdi($ejercicio, $codcli, $pedido_base);
         $locs = EdiLoclped::where("cabped_id", $pedidoEdi->id)->get();
+        $lineas = EdiLinped::where("cabped_id", $pedidoEdi->id)->get();
+
+        $artics = Ctsql::ctsqlExport("SELECT * FROM artic WHERE codcli='$codcli'");
+        $artics = json_decode($artics[0]);
         $data = [];
+
         foreach($tiendasReq as $iCamion => $tiendas) {
 
             foreach($tiendas as $tienda) {
                 foreach($locs as $loc) {
                     if($loc->lugar == $tienda) {
-                        $linPedido = $this->getLinPedidoFromLoc($pedidoEdi->id, $loc);
-                        $udsBulto = $this->getUdsProduct($linPedido->refean, $linPedido->refcli);
+                        $linPedido = $this->getLinPedidoFromLoc($pedidoEdi->id, $loc, $lineas);
+                        $udsBulto = $this->getUdsProduct($linPedido->refean, $linPedido->refcli, $artics->data);
 
 
                         if(!array_key_exists($iCamion, $data) || !array_key_exists($linPedido->refcli, $data[$iCamion])) {
@@ -1661,8 +1666,7 @@ class EdiController extends Controller
         return view("albaran.camiones-tiendas", $data);
     }
 
-    private function getLinPedidoFromLoc($idPedido, $loc) {
-        $lineas = EdiLinped::where("cabped_id", $idPedido)->get();
+    private function getLinPedidoFromLoc($idPedido, $loc, $lineas) {
         foreach($lineas as $linea) {
             if($linea->clave2 == $loc->clave2) {
                 return $linea;
@@ -1672,15 +1676,18 @@ class EdiController extends Controller
         return null;
     }
 
-    private function getUdsProduct($refEan, $codart) {
+    private function getUdsProduct($refEan, $codart, $artics) {
 
-        $artic = Ctsql::ctsqlExport("SELECT * FROM artic WHERE codbar = '$refEan' and codart='$codart'");
-        $artic = json_decode($artic[0]);
-        $artic = $artic->data[0];
+        foreach($artics as $artic) {
+            if($artic->codbar == $refEan && $codart == $artic->codart) {
+                $nameArtic = $artic->descri;
+                $udsBulto = substr($nameArtic, -3);
+                return explode("/", $udsBulto)[1];
+            }
+        }
 
-        $nameArtic = $artic->descri;
-        $udsBulto = substr($nameArtic, -3);
-        return explode("/", $udsBulto)[1];
+        return null;
+
 
     }
 }
