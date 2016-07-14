@@ -1578,5 +1578,109 @@ class EdiController extends Controller
     }
 
 
+    public function getBuildCamionesTiendas($codcli = null , $ejercicio = null, $pedido_base = null, $numCamiones = null)
+    {
+        if(!$numCamiones) {
+            return view("albaran.camiones-tiendas");
+        }
+        else {
+            $pedidoEdi = $this->getPedidoEdi($ejercicio, $codcli, $pedido_base);
 
+            $locs = EdiLoclped::where("cabped_id", $pedidoEdi->id)->get();
+
+            $lineas = EdiLinped::where("cabped_id", $pedidoEdi->id)->get();
+
+            $tiendasResult = EdiClientes::all();
+            $tiendas = [];
+            $labels = [];
+
+            foreach($tiendasResult as $tienda) {
+                $tiendas[$tienda->ean]['code'] = $tienda->cod_interno;
+                $tiendas[$tienda->ean]['nombre'] = $tienda->nombre;
+            }
+
+
+
+
+            foreach($lineas as $linea) {
+                foreach($locs as $loc) {
+                    if($linea->clave2 == $loc->clave2) {
+                        $labels[$loc->lugar]['codTienda'] = $tiendas[$loc->lugar]['code'];
+                        $labels[$loc->lugar]['tienda'] = $tiendas[$loc->lugar]['code']."<br>".
+                            $tiendas[$loc->lugar]['nombre'];
+                        $labels[$loc->lugar]['ean'] = $loc->lugar;
+                    }
+                }
+            }
+
+
+
+
+            foreach($labels as $index=>$label) {
+                $tiendasNumber[$index] = $labels[$index]["codTienda"];
+            }
+
+            array_multisort($tiendasNumber, SORT_ASC, $labels);
+
+            $data["tiendas"] = $labels;
+            $data["numCamiones"] = $numCamiones;
+
+            return view("albaran.camiones-tiendas", $data);
+        }
+    }
+
+    public function postBuildCamionesTiendas($codcli = null , $ejercicio = null, $pedido_base = null, $numCamiones = null) {
+        $tiendasReq = \Request::get("tiendas");
+
+        $pedidoEdi = $this->getPedidoEdi($ejercicio, $codcli, $pedido_base);
+        $locs = EdiLoclped::where("cabped_id", $pedidoEdi->id)->get();
+        $data = [];
+        foreach($tiendasReq as $iCamion => $tiendas) {
+
+            foreach($tiendas as $tienda) {
+                foreach($locs as $loc) {
+                    if($loc->lugar == $tienda) {
+                        $linPedido = $this->getLinPedidoFromLoc($pedidoEdi->id, $loc);
+                        $udsBulto = $this->getUdsProduct($linPedido->refean, $linPedido->refcli);
+
+
+                        if(!array_key_exists($iCamion, $data) || !array_key_exists($linPedido->refcli, $data[$iCamion])) {
+                            $data[$iCamion][$linPedido->refcli]["cantidad"] = 0;
+                            $data[$iCamion][$linPedido->refcli]["bultos"] = 0;
+                        }
+                        $data[$iCamion][$linPedido->refcli]["cantidad"] += $loc->cantidad;
+                        $data[$iCamion][$linPedido->refcli]["bultos"] += $loc->cantidad / $udsBulto;
+
+                    }
+                }
+            }
+        }
+
+        $data["camiones"] = $data;
+
+        return view("albaran.camiones-tiendas", $data);
+    }
+
+    private function getLinPedidoFromLoc($idPedido, $loc) {
+        $lineas = EdiLinped::where("cabped_id", $idPedido)->get();
+        foreach($lineas as $linea) {
+            if($linea->clave2 == $loc->clave2) {
+                return $linea;
+            }
+        }
+
+        return null;
+    }
+
+    private function getUdsProduct($refEan, $codart) {
+
+        $artic = Ctsql::ctsqlExport("SELECT * FROM artic WHERE codbar = '$refEan' and codart='$codart'");
+        $artic = json_decode($artic[0]);
+        $artic = $artic->data[0];
+
+        $nameArtic = $artic->descri;
+        $udsBulto = substr($nameArtic, -3);
+        return explode("/", $udsBulto)[1];
+
+    }
 }

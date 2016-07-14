@@ -12,7 +12,6 @@
                     <label class="col-md-4 control-label" for="ejercicio">Ejercicio</label>
                     <div class="col-md-4">
                         <input id="ejercicio" name="ejercicio" value="2016" type="text" placeholder="Inserte ejercicio" class="form-control input-md" required="">
-
                     </div>
                 </div>
 
