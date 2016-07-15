@@ -78,6 +78,10 @@ class EdiController extends Controller
     }
 
     public function removeAlbaranEdi($codcli, $ejerci, $numalb) {
+        var_dump($codcli);
+        var_dump($ejerci);
+        var_dump($numalb);
+
         AlbaranEdi::where("codcli", $codcli)->where("ejerci", $ejerci)->where("numalb", $numalb)->delete();
         AlbaranEdiCajas::where("codcli", $codcli)->where("ejerci", $ejerci)->where("numalb", $numalb)->delete();
         AlbaranEdiLineas::where("codcli", $codcli)->where("ejerci", $ejerci)->where("numalb", $numalb)->delete();
@@ -85,6 +89,7 @@ class EdiController extends Controller
         AlbaranEdiPalets::where("codcli", $codcli)->where("ejerci", $ejerci)->where("numalb", $numalb)->delete();
         AlbaranFisicoEdi::where("codcli", $codcli)->where("ejerci", $ejerci)->where("num_albaran", $numalb)->delete();
         AlbaranLineasFisicoEdi::where("codcli", $codcli)->where("ejerci", $ejerci)->where("num_albaran", $numalb)->delete();
+        die("HERE");
 
     }
 
@@ -131,7 +136,7 @@ class EdiController extends Controller
         $albaranAsArg = $numSerie.$ejerShort.$albaran->numalb;
 
         if($modify == "true") {
-            dd($albaranAsArg);
+
             $this->removeAlbaranEdi($albaran->codcli, $ejerShort, $albaranAsArg);
         }
 
