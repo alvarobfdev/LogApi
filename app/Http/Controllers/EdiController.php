@@ -130,6 +130,7 @@ class EdiController extends Controller
 
         $albaranAsArg = $numSerie.$ejerShort.$albaran->numalb;
 
+        dd($modify);
         if($modify == "true") {
             $this->removeAlbaranEdi($albaran->codcli, $ejerShort, $albaranAsArg);
         }
