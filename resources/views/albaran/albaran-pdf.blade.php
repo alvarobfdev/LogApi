@@ -153,7 +153,9 @@
         <div class="page">
             <div class="cabecera">
                 <div class="logo">
-                    LOGO
+                    @if($cliente->logo)
+                    <img src="{{asset($cliente->logo)}}">
+                    @endif
                 </div>
                 <div class="title"><div>Albarán de salida</div></div>
                 <div class="data">

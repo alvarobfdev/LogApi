@@ -40,6 +40,8 @@ class EdiController extends Controller
 
         $data["albaran"] = AlbaranFisicoEdi::where("codcli", $numcli)->where("num_albaran", $numalb)->where("ejerci", $ejerci)->first();
         $data["lineas"] = AlbaranLineasFisicoEdi::where("codcli", $numcli)->where("num_albaran", $numalb)->get();
+        $data["cliente"] = EdiClientes::where("cod_interno", $numcli)->where("cliente_logival", 1)->first();
+
 
 
         $view = view("albaran.albaran-pdf", $data);
