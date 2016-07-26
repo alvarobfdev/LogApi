@@ -86,7 +86,7 @@ class EdiController extends Controller
         AlbaranEdiPalets::where("codcli", $codcli)->where("ejerci", $ejerci)->where("numalb", $numalb)->delete();
         AlbaranFisicoEdi::where("codcli", $codcli)->where("ejerci", $ejerci)->where("num_albaran", $numalb)->delete();
         AlbaranLineasFisicoEdi::where("codcli", $codcli)->where("ejerci", $ejerci)->where("num_albaran", $numalb)->delete();
-    
+
 
     }
 
@@ -163,6 +163,9 @@ class EdiController extends Controller
         $comprador = EdiClientes::where("ean", $pedidoEdi->comprador)->first();
         if($comprador && $comprador->nombre_fiscal=="EL CORTE INGLÉS, S.A.") {
             $albaranEdi->destino = "8422416000016";
+        }
+        if($comprador && $comprador->nombre_fiscal=="DIA S.A") {
+            $albaranEdi->destino = "8480017300003";
         }
         else $albaranEdi->destino = $pedidoEdi->comprador;
         $albaranEdi->proveedor = $pedidoEdi->vendedor;
