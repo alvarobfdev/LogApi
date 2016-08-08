@@ -18,7 +18,8 @@
         "milon/barcode": "^5.2",
         "guzzlehttp/guzzle": "^6.2",
         "orchestra/parser": "~3.2",
-        "jenssegers/mongodb": "^3.0"
+        "jenssegers/mongodb": "^3.0",
+        "itsgoingd/clockwork": "~1.12"
 
     },
     "require-dev": {

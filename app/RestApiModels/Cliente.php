@@ -11,5 +11,28 @@ use Moloquent;
  */
 class Cliente extends Model
 {
+    public static $validationFilters = [
+        'codcli' => 'integer',
+    ];
+
+    public static $adminValidationFilters = [
+        'nomcli' => 'string',
+        'nomacc' => 'string'
+    ];
+
+    public static $showable = [
+        'tipped',
+        'numped',
+        'fecent',
+        'nomter',
+        'dirter',
+        'pobter',
+        'provter',
+        'cpter',
+        'tlfter',
+        'portes',
+        'serpar',
+        'reserv'
+    ];
 
 }

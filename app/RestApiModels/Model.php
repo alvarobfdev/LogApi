@@ -12,4 +12,17 @@ namespace App\RestApiModels;
 class Model extends \Moloquent
 {
    public static $validation = [];
+
+
+
+   public static $adminValidation = [];
+
+   public static $validationUpdate = [];
+   public static $adminValidationUpdate = [];
+   public static $validationFilters = [];
+   public static $adminValidationFilters = [];
+   public static $showable = [];
+
+
+
 }

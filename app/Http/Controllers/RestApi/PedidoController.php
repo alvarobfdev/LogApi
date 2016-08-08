@@ -19,6 +19,7 @@ class PedidoController extends Controller
     {
         $response = parent::index($request);
 
+
         if($response) {
             return $response;
         }
@@ -45,16 +46,8 @@ class PedidoController extends Controller
             $pedidos = $this->getFilteredBuilder($validFilters, $pedidos);
         }
 
-        if($request->has("limit")) {
-            $limit = $request->get("limit");
-            $this->limitPerPage = ($limit < $this->maxLimit) ? $limit : $this->maxLimit;
-        }
+        return $this->getBuildedCollection(Pedido::class, $pedidos, $user, $request);
 
-        if($user->isAdmin == 1) {
-            return $pedidos->paginate($this->limitPerPage);
-        }
-
-        else return $pedidos->select(Pedido::$showable)->paginate($this->limitPerPage);
     }
 
     /**

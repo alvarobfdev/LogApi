@@ -29,6 +29,7 @@ Route::get('/', function () {
 Route::group(['prefix'=> '/api/v1', 'middleware' => ['api']], function () {
     Route::resource('/user', 'RestApi\UserController');
     Route::resource('/pedidos', 'RestApi\PedidoController');
+    Route::resource('/clientes', 'RestApi\ClientesController');
     Route::resource('/articulos', 'RestApi\ArticuloController');
 
 });
@@ -45,6 +46,9 @@ Route::group(['middleware' => ['web']], function () {
     Route::controller('/barcode', 'BarcodeController');
     Route::controller('/amazon-mws', 'AmazonMWSController');
     Route::controller('/barcode-reader', 'BarcodeReaderController');
+    Route::controller('/web-app/pedidos', 'WebApp\PedidosController');
+    Route::controller('/web-app/clientes', 'WebApp\ClientesController');
+    Route::controller('/web-app', 'WebApp\MainController');
 
 });
 

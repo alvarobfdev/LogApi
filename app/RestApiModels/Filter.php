@@ -23,7 +23,7 @@ class Filter
     {
         $this->index = $index;
         $this->operator = $operator;
-        $this->value = $value;
+        $this->setValue($value);
     }
 
 
@@ -72,6 +72,12 @@ class Filter
      */
     public function setValue($value)
     {
+        if(is_numeric($value)) {
+            if (is_int($value)) {
+                $value = (int)$value;
+            }
+            $value = (float)$value;
+        }
         $this->value = $value;
     }
 

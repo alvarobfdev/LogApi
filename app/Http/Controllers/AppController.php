@@ -16,6 +16,7 @@ use App\ProductsEdiModel;
 use App\RestApiModels\Albaran;
 use App\RestApiModels\Cliente;
 use App\RestApiModels\LineasAlbaran;
+use App\RestApiModels\LineasPedido;
 use App\RestApiModels\Pedido;
 use App\RestApiModels\User;
 use App\WoocommerceApi;
@@ -24,7 +25,7 @@ class AppController extends Controller
 {
 
     public function getTestCtsql() {
-        $query = "SELECT * FROM artic WHERE codcli=139 AND (codart='BH1257' OR codart='BH1259' OR codart='BH1258')";
+        $query = "SELECT * FROM artic WHERE codcli=176";
         $exporter = new Ctsql();
         $resultArray = $exporter->ctsqlExport($query);
         if(is_array($resultArray) && count($resultArray) > 0) {
@@ -376,11 +377,7 @@ VALUES
         }
     }
 
-    public function getStockToys() {
-        $sql = "SELECT * FROM artic where codcli = 176";
-        $result = Ctsql::ctsqlExport($sql);
-        echo $result[0]."<br><br>";
-    }
+
 
     public function getImportAlbaranes() {
 
@@ -424,8 +421,59 @@ VALUES
             }
             $limit += 100;
         }while(count($linsalbar) > 0);
-
     }
 
-}
+    public function generalImport($sql, $class) {
+        $limit_ini = 0;
+        $transactions = 0;
 
+        do {
+            $pedidos = Ctsql::ctsqlExport($sql." LIMIT $limit_ini, 100");
+            $pedidos = json_decode($pedidos[0]);
+
+            foreach($pedidos->data as $pedido) {
+                $newObject = new $class();
+                foreach(get_object_vars($pedido) as $var=>$value) {
+                    $newObject->$var = $value;
+                }
+                $newObject->save();
+            }
+
+            $limit_ini += 100;
+            $transactions += count($pedidos->data);
+
+        } while(count($pedidos->data)>0);
+
+        echo "Se han realizado $transactions transacciones";
+    }
+
+    public function getImportPedidos() {
+
+        //$this->generalImport("SELECT * FROM pedidos WHERE ejeped = 2016", Pedido::class);
+    }
+
+    public function getImportLineasPedidos() {
+        //$this->generalImport("SELECT * FROM linpedidos WHERE ejeped = 2016", LineasPedido::class);
+    }
+
+    public function getLinesFactura() {
+
+
+        //$result = Ctsql::ctsqlImport("DELETE FROM linfactu WHERE ejefac=2016 AND numfac=306 AND numlin=92");
+        //var_dump($result);
+
+        for($i=328; $i>=281; $i--) {
+            $result = Ctsql::ctsqlExport("SELECT * FROM linfactu WHERE ejefac=2016 AND numfac=$i ORDER BY numlin ASC");
+            $data = json_decode($result[0]);
+            $data = $data->data;
+            $importeTotal = 0;
+            foreach ($data as $linea) {
+                $importeTotal += $linea->import + $linea->seguro;
+            }
+            $importeTotal = $importeTotal + ($importeTotal * 0.21);
+            echo $importeTotal . "<br><br>";
+        }
+    }
+
+
+}

@@ -725,7 +725,6 @@
 
         function loadLocalData(data) {
             var local_object = JSON.parse(data);
-            console.log(local_object);
 
             lineasAlbaran = local_object.lineasAlbaran;
             tipoPalets = local_object.tipoPalets;
