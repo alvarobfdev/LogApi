@@ -1251,6 +1251,10 @@ class EdiController extends Controller
 
     }
 
+    public function getEroskiFromPedido() {
+        return view("etiquetas.formEroski");
+    }
+
     public function getEroskiLabelsFromPedido($codcli, $ejercicio, $pedido_base, $html = null) {
 
         $pedidoEdi = $this->getPedidoEdi($ejercicio, $codcli, $pedido_base);
