@@ -280,6 +280,9 @@ class DasanciController extends Controller
         $pobdis = $shipping_address->city;
         $codtec = $order->customer_id;
         $billing_address = $order->billing_address;
+        if(!isset($billing_address->nif)) {
+            $billing_address->nif = "";
+        }
         $observ = "NIF: " . $billing_address->nif . " Telf: " . $billing_address->phone . " Email:" . $billing_address->email;
         $ejercicio = Carbon::createFromFormat('Y-m-d\TH:i:sP', $order->created_at)->year;
         $numped = $order->order_number;
