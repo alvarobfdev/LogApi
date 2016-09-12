@@ -162,7 +162,8 @@ return [
         Milon\Barcode\BarcodeServiceProvider::class,
         Jenssegers\Mongodb\MongodbServiceProvider::class,
         Jenssegers\Mongodb\Auth\PasswordResetServiceProvider::class,
-        Clockwork\Support\Laravel\ClockworkServiceProvider::class
+        //Clockwork\Support\Laravel\ClockworkServiceProvider::class
+
 
 
 
