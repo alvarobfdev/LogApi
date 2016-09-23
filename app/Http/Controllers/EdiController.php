@@ -1125,33 +1125,29 @@ class EdiController extends Controller
 
             $numlin = $linPed->clave2;
             $sku = $linPed->refcli;
-            $sku = ltrim($sku, '0');
+            $skuWithoutZero = ltrim($sku, '0');
             $cantid = $linPed->cantped;
             $descri = $linPed->descmer;
 
-            $ctsql = "SELECT * FROM artic WHERE codcli=$codcli and codart='$sku'";
+            $ctsql = "SELECT * FROM artic WHERE codcli=$codcli and codart='$skuWithoutZero'";
             $result = Ctsql::ctsqlExport($ctsql);
             $result = json_decode($result[0]);
 
             if(count($result->data) < 1) {
-                $this->adviseNoArtic($sku, $descri, $cantid, $numped, $codcli);
+                $ctsql = "SELECT * FROM artic WHERE codcli=$codcli and codart='$sku'";
+                $result = Ctsql::ctsqlExport($ctsql);
+                $result = json_decode($result[0]);
+                if(count($result->data) < 1) {
+                    $this->adviseNoArtic($sku, $descri, $cantid, $numped, $codcli);
+                }
+                else {
+                    $descri = $this->insertLineIntoMultibase($codcli, $numped, $result, $ejeped, $numlin, $sku, $cantid);
+                }
             }
 
             else  {
-                $descri = $result->data[0]->descri;
-
-                $query = "INSERT INTO linpedidos ("
-                    . "codemp, coddel, codcli, tipped, serped, ejeped, numped, numlin,"
-                    . "codart, cantid, bultos, kilos, volume, precio, dtoli1,"
-                    . "dtoli2, descri, estado, tipdoc, tipiva, edilin, asocia,"
-                    . "nopick, lnpick, codkit)"
-                    . "VALUES"
-                    . "(1, 1, $codcli, 'S', '', $ejeped, $numped, $numlin,"
-                    . "'$sku', $cantid, 0, 0, 0, 0, 0,"
-                    . "0, '$descri', '', 'P', 0, 'S', 0,"
-                    . "0, 0, '')";
-
-                Ctsql::ctsqlImport($query);
+                $sku = $skuWithoutZero;
+                $descri = $this->insertLineIntoMultibase($codcli, $numped, $result, $ejeped, $numlin, $sku, $cantid);
             }
 
         }
@@ -1700,5 +1696,34 @@ class EdiController extends Controller
         return null;
 
 
+    }
+
+    /**
+     * @param $codcli
+     * @param $numped
+     * @param $result
+     * @param $ejeped
+     * @param $numlin
+     * @param $sku
+     * @param $cantid
+     * @return mixed
+     */
+    private function insertLineIntoMultibase($codcli, $numped, $result, $ejeped, $numlin, $sku, $cantid)
+    {
+        $descri = $result->data[0]->descri;
+
+        $query = "INSERT INTO linpedidos ("
+            . "codemp, coddel, codcli, tipped, serped, ejeped, numped, numlin,"
+            . "codart, cantid, bultos, kilos, volume, precio, dtoli1,"
+            . "dtoli2, descri, estado, tipdoc, tipiva, edilin, asocia,"
+            . "nopick, lnpick, codkit)"
+            . "VALUES"
+            . "(1, 1, $codcli, 'S', '', $ejeped, $numped, $numlin,"
+            . "'$sku', $cantid, 0, 0, 0, 0, 0,"
+            . "0, '$descri', '', 'P', 0, 'S', 0,"
+            . "0, 0, '')";
+
+        Ctsql::ctsqlImport($query);
+        return $descri;
     }
 }
