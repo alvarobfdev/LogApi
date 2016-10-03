@@ -12,25 +12,23 @@
     var keyDownEvent = null;
     var table = null;
     var timeout = null;
+    var settings = null;
 
     $.fn.tableSelector = function(options) {
 
         this.tableSelector.destroy();
         table = this;
-        var settings = $.extend({
+        settings = $.extend({
             // These are the defaults.
-            backgroundColor: "white"
+            backgroundColor: "white",
+            accessRowFunction:function() {}
         }, options );
 
-        rebuildTable(settings);
-
-
-
+        rebuildTable();
     };
 
 
     $.fn.tableSelector.destroy = function() {
-
         $('.cellSelectorIcon').remove();
         if(table!=null) {
             $('body').off('keydown', keyDownHandler);
@@ -38,10 +36,7 @@
         }
     };
 
-    function rebuildTable(settings) {
-
-
-
+    function rebuildTable() {
         var cssProperties = {
             border:"none",
             "background-color":settings.backgroundColor,
@@ -88,7 +83,13 @@
                 lastSelector.html('');
             }
         }
-    }
+
+        if(e.keyCode == 13) { //Enter key
+            e.preventDefault();
+            var row = table.find('tbody tr:eq('+selectedRow+')');
+            settings.accessRowFunction(row);
+        }
+     }
 
 
 }( jQuery ));

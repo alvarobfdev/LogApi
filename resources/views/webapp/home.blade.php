@@ -65,8 +65,8 @@
                 </div><!-- /.navbar-collapse -->
             </div><!-- /.container-fluid -->
         </nav>
-        <div class="row shortkeys">
-            <div class="col-md-12" id="keysInfo">
+        <div class="row shortkeys" style="margin: 0">
+            <div class="col-sm-12" id="keysInfo">
                 <span>(B) Buscar por cliente</span>
                 <span>(F2) Listar pedidos</span>
                 <span>(F3) Encontrar ubicaciones</span>
@@ -93,14 +93,61 @@
             currentPage:null,
             currentArgs:{},
             currentPageData:{},
+            tempData:{},
 
+            advice:{
+                ERROR:'error',
+                send:function(type, msg) {
+
+                    var msgOptions = {
+                        text: msg,
+                        type: type,
+                        timeout: 5000,
+                        animation: {
+                            open: {height: 'toggle'}, // jQuery animate function property object
+                            close: {height: 'toggle'}, // jQuery animate function property object
+                            easing: 'swing', // easing
+                            speed: 500 // opening & closing animation speed
+                        }
+                    };
+
+
+
+                    var n = noty(msgOptions);
+                }
+            },
+
+            hasTempData:function(name) {
+                return this.tempData.hasOwnProperty(name) && this.tempData[name] != null;
+            },
+
+            getTempData:function(name) {
+                return this.tempData[name];
+            },
+
+            addTempData:function(name, value) {
+                this.tempData[name] = value;
+            },
+
+            deleteTempData:function(name) {
+                this.tempData[name] = null;
+            },
+
+            deleteAllTempData:function() {
+                setTimeout(function() {
+                    console.log("DELETING TEMP DATA");
+                    WEBAPP.common.tempData = {};
+                    WEBAPP.common.deleteAllTempData();
+                },60000);
+            },
             pushPage:function(seccion, page, args, pageData, template) {
                 var data = {};
                 if(seccion != null) {
                     data['seccion'] = seccion;
                     data['page'] = page;
                     data['args'] = args;
-                    data['pageData'] = pageData;
+                    var copiedObject = jQuery.extend({}, pageData)
+                    data['pageData'] = copiedObject;
                     data['template'] = template;
                     this.pagesStack.push(data);
                 }
@@ -158,7 +205,7 @@
             },
             handleShortKey:function(keyCode) {
                 var key = this.getKeyFromKeyCode(keyCode);
-                if(this.shortkeys) {
+                if(this.shortkeys || key == "f1") {
                     if (key != null && this.keyLogs.hasOwnProperty(key)) {
                         var callback = this.keyLogs[key];
                         callback();
@@ -193,8 +240,10 @@
                 return null;
             },
             addKeyLog:function(key, callback, description) {
+                if(!this.keyLogs.hasOwnProperty(key)) {
+                    $('#keysInfo').append('<span>('+key.toUpperCase()+') '+description+'</span>');
+                }
                 this.keyLogs[key] = callback;
-                $('#keysInfo').append('<span>('+key.toUpperCase()+') '+description+'</span>');
             },
             resetKeyLog:function () {
                 this.keyLogs = {};
@@ -212,14 +261,36 @@
                 if(data != null) {
                     this.loadPage(data.seccion, data.page, data.args, true);
                     if(data.template != null) {
-                        console.log(data.template);
                         $('#central-content').html(data.template);
                         this.currentPageData = data.pageData;
-                        this.restoreTemplate();
+                        this.restoreTemplate(data.template);
                     }
                 }
 
+            },
+
+            manageAjaxError:function(data) {
+                var jsonError = this.parseJsonOrError(data.responseText);
+                if(jsonError == false) {
+                    this.advice.send(this.advice.ERROR, "Error desconocido. Consulte un técnico.");
+                }
+                else {
+                    for(var i=0; i<jsonError.errors; i++) {
+                        this.advice.send(this.advice.ERROR, jsonError.errors[i]);
+                    }
+                }
+            },
+
+            parseJsonOrError:function(str) {
+
+                try {
+                    return JSON.parse(str);
+                } catch (e) {
+                    return false;
+                }
+
             }
+
         };
 
 
@@ -227,11 +298,11 @@
 
             $('body').on('keydown', keyDownHandlerBase);
 
-            $('body').on('focusout', 'input', function(e) {
+            $('body').on('focusout', 'input, textarea, select', function(e) {
                 WEBAPP.common.shortkeys = true;
             });
 
-            $('body').on('focusin', 'input', function(e) {
+            $('body').on('focusin', 'input, textarea, select', function(e) {
                 WEBAPP.common.shortkeys = false;
             });
 
@@ -243,6 +314,9 @@
                     $('#central-content').html(template);
                 });
             });
+
+            WEBAPP.common.deleteAllTempData();
+
         });
 
         function keyDownHandlerBase(e) {
@@ -250,9 +324,15 @@
         }
 
         var keymapping = {};
-        keymapping["b"] = 66;
-        keymapping["p"] = 80;
         keymapping["esc"] = 27;
+        keymapping["b"] = 66;
+        keymapping["g"] = 71;
+        keymapping["l"] = 76;
+        keymapping["m"] = 77;
+        keymapping["p"] = 80;
+        keymapping["r"] = 82;
+        keymapping["f1"] = 112;
+
 
 
 

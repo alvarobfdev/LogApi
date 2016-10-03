@@ -22,4 +22,12 @@ class Ctsql
         exec("java -jar ".storage_path("app/bin")."/CtsqlExport.jar $args", $output);
         return $output;
     }
+
+    public static function ctsqlExportData($query) {
+        $result = self::ctsqlExport($query);
+        $result = json_decode($result[0]);
+        if($result->success)
+            return $result->data;
+        else return $result;
+    }
 }

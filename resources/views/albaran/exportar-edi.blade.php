@@ -48,9 +48,9 @@
 
                 <!-- Text input-->
                 <div class="form-group">
-                    <label class="col-md-4 control-label" for="numCamiones">Nº de camiones</label>
+                    <label class="col-md-4 control-label" for="manipulacion">Manipulación</label>
                     <div class="col-md-4">
-                        <input id="numCamiones" name="numCamiones" type="text" placeholder="Inserte cantidad de camiones" class="form-control input-md" required="" value="1">
+                        <input id="manipulacion" name="manipulacion" type="checkbox">
                     </div>
                 </div>
 
@@ -150,6 +150,7 @@
 
         </fieldset>
     </form>
+@endsection
 @section('scripts')
     <script>
 
@@ -177,6 +178,7 @@
         var selectedPalet;
         var hasTiendas = false;
         var modify = false;
+        var manipulacion;
 
         var albaran;
         var hashLocalData;
@@ -758,6 +760,7 @@
             bultosCapas = new Array(data.albaran.totpal);
             tiendas = data.tiendasList;
             locs = data.locs;
+            manipulacion = data.manipulacion;
 
             if(tiendas.length > 0) {
                 hasTiendas = true;
@@ -944,5 +947,4 @@
 
 
     </script>
-@endsection
 @endsection

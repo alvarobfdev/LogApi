@@ -25,11 +25,21 @@
         </tbody>
     </table>
 </div>
-
+<script src="{{asset('js/webapp/pedidos/base.js')}}"></script>
 <script>
 
     var app = WEBAPP.common;
     var busquedaPorCliente = {
+
+        pageType:"search",
+        activateSelector:function() {
+            $('#pedidosCliente').tableSelector({
+                accessRowFunction: function(row) {
+                    var id = row.attr('data-id');
+                    basePedidos.loadPedido(id);
+                }
+            });
+        },
 
         busquedaPedidoPorCliente: function () {
             app.loadPage('pedidos', 'busquedaPorCliente');
@@ -39,20 +49,12 @@
             app.loadPage('pedidos', 'ultimosPedidos');
         },
 
-        loadPedido:function(idPedido) {
-            var args = {};
-            args['pageType'] = 'read';
-            args['idPedido'] = idPedido;
-            app.loadPage('pedidos', 'formPedido', args);
-        },
-
         page:1,
 
         loadTable:function(idCliente, dataRestart, restart) {
             var table = $('#pedidosCliente tbody');
 
             $.getJSON("{{url('web-app/pedidos/by-client')}}/"+idCliente+"/"+busquedaPorCliente.page, function(data) {
-                app.savePage();
                 var pedidos = data.data;
                 if(pedidos.length > 0) {
                     for (var i = 0; i < pedidos.length; i++) {
@@ -74,7 +76,7 @@
                     }
                     $('#pedidosClienteData').show();
                     $('#formPedidosCliente').hide();
-                    $('#pedidosCliente').tableSelector();
+                    busquedaPorCliente.activateSelector();
 
                     if(data.current_page < data.last_page) {
                         if($(document).height() == $(window).height()){
@@ -101,6 +103,8 @@
 
         obtenerPedidosCliente:function(idCliente) {
 
+            app.savePage();
+            busquedaPorCliente.pageType = "table";
             this.loadTable(idCliente);
 
             $.getJSON("{{url('web-app/clientes/cliente')}}/"+idCliente, function(data) {
@@ -116,8 +120,26 @@
                     busquedaPorCliente.page++;
                     busquedaPorCliente.loadTable(idCliente, data, restart);
                 }
-            })
+            });
 
+        },
+        sendForm:function(e) {
+            var inputCliente = $('#inputCliente');
+            e.preventDefault();
+            busquedaPorCliente.obtenerPedidosCliente(inputCliente.val());
+            inputCliente.autocomplete('disable');
+        },
+
+        activateAutocomplete:function() {
+            var inputCliente = $('#inputCliente');
+            inputCliente.autocomplete({
+                serviceUrl: '{{url("/web-app/clientes/autocomplete")}}',
+                onSelect: function (suggestion) {
+                    inputCliente.val(suggestion.data);
+                    inputCliente.prop('disabled', true);
+                    busquedaPorCliente.obtenerPedidosCliente(suggestion.data);
+                }
+            });
         }
     };
 
@@ -133,24 +155,12 @@
             inputCliente.prop('disabled', false);
             inputCliente.focus();
         }, 100);
+        $('#formPedidosCliente').on('submit', busquedaPorCliente.sendForm);
 
-        $('#formPedidosCliente').on('submit', function(e) {
-            e.preventDefault();
-            busquedaPorCliente.obtenerPedidosCliente(inputCliente.val());
-            inputCliente.autocomplete('disable');
-        });
+        busquedaPorCliente.activateAutocomplete();
 
-        inputCliente.autocomplete({
-            serviceUrl: '{{url("/web-app/clientes/autocomplete")}}',
-            onSelect: function (suggestion) {
-                inputCliente.val(suggestion.data);
-                inputCliente.prop('disabled', true);
-                busquedaPorCliente.obtenerPedidosCliente(suggestion.data);
-            }
-        });
-
-        $('body').on('click', 'tr', function() {
-            busquedaPorCliente.loadPedido($(this).attr('data-id'));
+        $('body').on('click', '#pedidosCliente tr', function() {
+            basePedidos.loadPedido($(this).attr('data-id'));
         })
 
     };
@@ -162,8 +172,21 @@
 
     };
     app.restoreTemplate = function() {
+        var inputCliente = $('#inputCliente');
         busquedaPorCliente = app.currentPageData;
-        $('#pedidosCliente').tableSelector();
+        console.log(busquedaPorCliente.pageType);
+        if(busquedaPorCliente.pageType == "table") {
+            busquedaPorCliente.activateSelector();
+        }
+        if(busquedaPorCliente.pageType == "search") {
+            $('#formPedidosCliente').on('submit', busquedaPorCliente.sendForm);
+            busquedaPorCliente.activateAutocomplete();
+            setTimeout(function() {
+                inputCliente.prop('disabled', false);
+                inputCliente.focus();
+            }, 100);
+        }
+
     };
 
 </script>

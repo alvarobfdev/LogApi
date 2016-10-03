@@ -26,7 +26,7 @@
         </table>
     </div>
 </div>
-
+<script src="{{asset('js/webapp/pedidos/base.js')}}"></script>
 <script>
 
     var app = WEBAPP.common;
@@ -58,7 +58,7 @@
                     if (pedido.tipped == 'S') {
                         tipped = "&larr; Salida"
                     }
-                    var tr = '<tr>' +
+                    var tr = '<tr data-id="'+pedido._id+'">' +
                             '<td>' + tipped + '</td>' +
                             '<td>' + pedido.codcli + '</td>' +
                             '<td>' + pedido.numped + '</td>' +
@@ -83,7 +83,15 @@
 
                 }
 
-                $('#ultimosPedidos').tableSelector();
+                else {
+                    $(window).scrollLoad('destroy');
+                }
+
+                $('#ultimosPedidos').tableSelector({
+                    accessRowFunction:function(row) {
+                        basePedidos.loadPedido(row.attr('data-id'));
+                    }
+                });
 
 
             });
@@ -105,9 +113,14 @@
                 ultimosPedidos.loadTable(obj, reactivate);
             }
         });
+
+        $('body').on('click', '#ultimosPedidos tr', function() {
+            basePedidos.loadPedido($(this).attr('data-id'));
+        })
     };
 
     app.unloadTemplate = function() {
+        $('body').off('click', '#ultimosPedidos tr');
         $(window).scrollLoad('destroy');
         ultimosPedidos = {};
         $('#ultimosPedidos').tableSelector.destroy();

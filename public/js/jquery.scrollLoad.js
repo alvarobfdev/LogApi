@@ -30,6 +30,7 @@
             // These are the defaults.
             distanceFromBottom: 500,
             loaderFunction:function() {},
+            accessRowFunction:function() {},
             content: $(document)
         }, options );
 
