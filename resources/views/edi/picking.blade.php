@@ -13,7 +13,6 @@
                 <tr>
                     <td><input type="checkbox" name="linea_albaran[{{$index}}]" data-id="{{$index}}"></td>
                     <td>{{$linea->codart}}</td>
-                    <td>{{$linea->descri}}</td>
                     <td><input style="width: 50%; text-align: right" type="text"  value="{{$linea->cantid}}" id="cantidad_bulto[{{$index}}]" name="cantidad_bulto[{{$index}}]"> / <span id="maxUds_{{$index}}">{{$linea->cantid}}</span></td>
                 </tr>
                 @endforeach
@@ -22,7 +21,7 @@
     </div>
     <div class="col-sm-4">
         <div class="row">
-            <table class="table" id="tablaBultos">
+            <table class="table" id="tablaBultos" style="font-size: 10px;">
 
             </table>
         </div>
