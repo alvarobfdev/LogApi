@@ -210,9 +210,16 @@
 
         function finishEdi() {
             var paletsJson = JSON.stringify(palets);
+            var parameters = {
+                'data':paletsJson, 'ejerci':'{{$ejerci}}', 'codcli':'{{$codcli}}', 'codAlbaran':'{{$codAlbaran}}'
+            };
+
+            @if(isset($seralb))
+                parameters.seralb = '{{$seralb}}';
+            @endif
+
             $.post(
-                    '{{url('app/edi/picking')}}',
-                    {'data':paletsJson, 'ejerci':'{{$ejerci}}', 'codcli':'{{$codcli}}', 'codAlbaran':'{{$codAlbaran}}'},
+                    '{{url('app/edi/picking')}}', parameters,
                     function(result) {
 
                     }
