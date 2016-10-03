@@ -279,7 +279,7 @@ class EdiController extends Controller
         $albaranEdi->codcli = $albaran->codcli;
         $albaranEdi->ejerci = $albaran->ejerci;
         $albaranEdi->totqty = $this->getTotalUds($palets);
-        $albaranEdi->save();
+        //$albaranEdi->save();
     }
 
     private function fillAlbaranEdiPaletsDb($palets, $albaran) {
@@ -1068,13 +1068,17 @@ class EdiController extends Controller
         return ($ext == "xml" || $ext == "XML");
     }
 
-    private function getNextSscc($codcli, $cant = 1) {
+    private function getNextSscc($codcli, $cant = 1, $ejerci=2016) {
 
         if(!self::$sscc) {
             $ssccCaja = \DB::connection('mysql')->table("albaran_edi_cajas")->select(\DB::connection('mysql')->raw("MAX(SUBSTRING(sscc, 1, CHAR_LENGTH(sscc) - 1)) AS sscc_no_digit"), "cantidad")->where("codcli", $codcli)->first();
 
+            $sscc = $ssccCaja->sscc_no_digit.$this->getSsccDigitControl($ssccCaja->sscc_no_digit);
+
+
             if($ssccCaja->sscc_no_digit) {
-                $nextSccc = $ssccCaja->sscc_no_digit + $ssccCaja->cantidad;
+                $albaranEdiCajas = AlbaranEdiCajas::where("sscc", $sscc)->where("codcli", $codcli)->where("ejerci", $ejerci)->first();
+                $nextSccc = $ssccCaja->sscc_no_digit + $albaranEdiCajas->cantidad;
             }
 
             else $nextSccc = $this->getFirstSscc($codcli);
@@ -1086,7 +1090,7 @@ class EdiController extends Controller
             self::$sscc += $cant;
 
         }
-
+        
         $sscc = $nextSccc.$this->getSsccDigitControl($nextSccc);
         return $sscc;
 
