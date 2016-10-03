@@ -7,7 +7,7 @@
             <button id="addBulto" type="button" class="btn btn-primary">Añadir Bulto</button>
         </div>
         <div class="row">
-            <table class="table">
+            <table class="table" style="font-size: 10px;">
 
                 @foreach($lineasAlbaran as $index=>$linea)
                 <tr>
