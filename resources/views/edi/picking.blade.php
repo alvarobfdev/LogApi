@@ -218,12 +218,27 @@
                 parameters.seralb = '{{$seralb}}';
             @endif
 
+            $('#finishEdi').prop('disabled', true);
+            $('#finishEdi').text('Exportando...');
+
             $.post(
                     '{{url('app/edi/picking')}}', parameters,
                     function(result) {
+                        alert("Exportado con éxito");
+                        $('#finishEdi').text('Exportado!');
+                        var ejerci = parameters.ejerci;
+                        ejerci = ejerci.toString().slice(-2);
+                        $('#finishEdi').after('<a target="_blank" href="{{url('app/edi/albaran-pdf')}}/' + parameters.codcli + '/' + parameters.ejerci + '/' + parameters.seralb + ejerci + parameters.codAlbaran + '" class="btn btn-primary">Albarán físico</a>');
+
+
+                        $(document).on('click', '#finishEdi', function() {
+
+                        });
 
                     }
-            );
+            ).fail(function() {
+                alert("Ha habido algún error. Consultar a Álvaro.");
+            })
         }
 
 

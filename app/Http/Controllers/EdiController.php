@@ -132,6 +132,10 @@ class EdiController extends Controller
         }
     }
 
+    public function getAlbaranPicking() {
+        return view("edi.form-picking");
+    }
+
     public function getPicking($ejerci, $codcli, $codAlbaran, $numSerie = null) {
         $query = "SELECT * FROM linalbar WHERE tipalb = 'S' AND codcli=$codcli AND ejerci = $ejerci AND numalb = $codAlbaran";
         if($numSerie)
@@ -160,7 +164,7 @@ class EdiController extends Controller
         $pedidoEdi = $this->getPedidoEdi($ejerci, $codcli, $albaranMultibase->numped);
         $this->fillAlbaranEdi($albaranMultibase, $pedidoEdi, $palets);
         $this->uploadEdiXml($codcli, $ejerci, $this->getNumAlbaranEdi($albaranMultibase));
-
+        $this->getSaveAlbaranEdiPdf($ejerci, $codcli, $codAlbaran, $seralb);
     }
 
     private function uploadEdiXml($codcli, $ejerci, $numalb) {
