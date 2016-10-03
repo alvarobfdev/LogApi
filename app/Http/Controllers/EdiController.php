@@ -135,14 +135,14 @@ class EdiController extends Controller
     public function getPicking($ejerci, $codcli, $codAlbaran, $numSerie = null) {
         $query = "SELECT * FROM linalbar WHERE tipalb = 'S' AND codcli=$codcli AND ejerci = $ejerci AND numalb = $codAlbaran";
         if($numSerie)
-            $query = " AND seralb='$numSerie";
+            $query .= " AND seralb='$numSerie'";
         $data['lineasAlbaran'] = Ctsql::ctsqlExportData($query);
         $this->injectCodBarrasToLineas($data['lineasAlbaran'], $codcli);
         $data['lineasAlbaranJson'] = json_encode($data['lineasAlbaran']);
         $data["ejerci"] = $ejerci;
         $data["codcli"] = $codcli;
         if($numSerie) {
-            $data["serAlb"] = $numSerie;
+            $data["seralb"] = $numSerie;
         }
         $data["codAlbaran"] = $codAlbaran;
         return view("edi.picking", $data);
@@ -155,8 +155,7 @@ class EdiController extends Controller
         $codAlbaran = \Request::get("codAlbaran");
         $seralb = null;
         if(\Request::has("seralb"))
-            $seralb = \Request::has("seralb");
-
+            $seralb = \Request::get("seralb");
         $this->getAlbaran($ejerci, $codcli, $codAlbaran, $albaranMultibase, $seralb);
         $pedidoEdi = $this->getPedidoEdi($ejerci, $codcli, $albaranMultibase->numped);
         $this->fillAlbaranEdi($albaranMultibase, $pedidoEdi, $palets);
