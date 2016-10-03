@@ -36,8 +36,11 @@ class EdiController extends Controller
     private $productsNotFound = [];
 
 
-    public function getSaveAlbaranEdiPdf($ejerci, $codcli, $codAlbaran) {
+    public function getSaveAlbaranEdiPdf($ejerci, $codcli, $codAlbaran, $seralb=null) {
         $query = "SELECT * FROM albaran WHERE tipalb='S' AND codcli=$codcli AND ejerci=$ejerci and numalb = $codAlbaran";
+        if($seralb) {
+            $query .= " AND seralb='$seralb'";
+        }
         $albaran = Ctsql::ctsqlExportData($query)[0];
         $albaranEdi = AlbaranEdi::where("codcli", $codcli)->where("ejerci", $ejerci)->where("numalb", $this->getNumAlbaranEdi($albaran))->first();
         $albaranEdiCajas = AlbaranEdiCajas::where("codcli", $codcli)->where("ejerci", $ejerci)->where("numalb", $this->getNumAlbaranEdi($albaran))->get();
@@ -129,13 +132,18 @@ class EdiController extends Controller
         }
     }
 
-    public function getPicking($ejerci, $codcli, $codAlbaran) {
+    public function getPicking($ejerci, $codcli, $codAlbaran, $numSerie = null) {
         $query = "SELECT * FROM linalbar WHERE tipalb = 'S' AND codcli=$codcli AND ejerci = $ejerci AND numalb = $codAlbaran";
+        if($numSerie)
+            $query = " AND seralb='$numSerie";
         $data['lineasAlbaran'] = Ctsql::ctsqlExportData($query);
         $this->injectCodBarrasToLineas($data['lineasAlbaran'], $codcli);
         $data['lineasAlbaranJson'] = json_encode($data['lineasAlbaran']);
         $data["ejerci"] = $ejerci;
         $data["codcli"] = $codcli;
+        if($numSerie) {
+            $data["serAlb"] = $numSerie;
+        }
         $data["codAlbaran"] = $codAlbaran;
         return view("edi.picking", $data);
     }
@@ -145,8 +153,11 @@ class EdiController extends Controller
         $ejerci = \Request::get("ejerci");
         $codcli = \Request::get("codcli");
         $codAlbaran = \Request::get("codAlbaran");
+        $seralb = null;
+        if(\Request::has("seralb"))
+            $seralb = \Request::has("seralb");
 
-        $this->getAlbaran($ejerci, $codcli, $codAlbaran, $albaranMultibase);
+        $this->getAlbaran($ejerci, $codcli, $codAlbaran, $albaranMultibase, $seralb);
         $pedidoEdi = $this->getPedidoEdi($ejerci, $codcli, $albaranMultibase->numped);
         $this->fillAlbaranEdi($albaranMultibase, $pedidoEdi, $palets);
         $this->uploadEdiXml($codcli, $ejerci, $this->getNumAlbaranEdi($albaranMultibase));
@@ -155,7 +166,7 @@ class EdiController extends Controller
 
     private function uploadEdiXml($codcli, $ejerci, $numalb) {
         $routeFile = $this->generateEdi($codcli, $ejerci, $numalb);
-        //$this->uploadEdi();
+        $this->uploadEdi();
     }
 
     private function uploadEdi() {
@@ -182,8 +193,8 @@ class EdiController extends Controller
         $dom->formatOutput = TRUE;
         $formatted = $dom->saveXML();
         $datetime = Carbon::create()->format("Ymdhis");
-        //$route = "/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml";
-        $route = storage_path("app/tmp/").$datetime.".xml";
+        $route = "/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml";
+        //$route = storage_path("app/tmp/").$datetime.".xml";
         file_put_contents($route, $formatted);
         return $route;
     }
@@ -439,7 +450,11 @@ class EdiController extends Controller
 
     private function getNumAlbaranEdi($albaran) {
         $ejerShort = substr($albaran->ejerci, -2);
-        return $ejerShort.$albaran->numalb;
+
+        $num = $ejerShort.$albaran->numalb;
+        if($albaran->seralb != "" && $albaran->seralb != " ")
+            $num = $albaran->seralb.$num;
+        return $num;
     }
 
     private function getTotalUds($palets) {
