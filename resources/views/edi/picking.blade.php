@@ -213,9 +213,12 @@
                 'data':paletsJson, 'ejerci':'{{$ejerci}}', 'codcli':'{{$codcli}}', 'codAlbaran':'{{$codAlbaran}}'
             };
 
+
+            parameters.seralb='';
             @if(isset($seralb))
                 parameters.seralb = '{{$seralb}}';
             @endif
+
 
             $('#finishEdi').prop('disabled', true);
             $('#finishEdi').text('Exportando...');
