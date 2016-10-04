@@ -254,7 +254,7 @@ class ApiController extends Controller
         return $groups;
     }
 
-    function date_compare($a, $b)
+    private function date_compare($a, $b)
     {
         $t1 = strtotime($a['feccal']);
         $t2 = strtotime($b['feccal']);
@@ -263,8 +263,7 @@ class ApiController extends Controller
 
     private function viewInvoice($factura)
     {
-        usort($factura['lines'], 'date_compare');
-
+        usort($factura['lines'], array($this, 'date_compare'));
         $data['factura'] = $factura;
 
         $data['groups'] = $this->groupsInvoice($factura);
