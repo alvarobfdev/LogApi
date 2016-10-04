@@ -372,7 +372,7 @@ class EdiController extends Controller
         if($comprador && $comprador->nombre_fiscal=="EL CORTE INGLÉS, S.A.") {
             $albaranEdi->destino = "8422416000016";
         }
-        if($comprador && $comprador->nombre_fiscal=="DIA S.A") {
+        else if($comprador && $comprador->nombre_fiscal=="DIA S.A") {
             $albaranEdi->destino = "8480017300003";
         }
         else $albaranEdi->destino = $pedidoEdi->comprador;
