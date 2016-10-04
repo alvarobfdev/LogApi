@@ -35,6 +35,7 @@ class EdiController extends Controller
 
     private $productsNotFound = [];
 
+    
 
     public function getSaveAlbaranEdiPdf($ejerci, $codcli, $codAlbaran, $seralb=null) {
         $query = "SELECT * FROM albaran WHERE tipalb='S' AND codcli=$codcli AND ejerci=$ejerci and numalb = $codAlbaran";
@@ -502,8 +503,8 @@ class EdiController extends Controller
     }
 
     public function getCheckNewOrders() {
-        //$files = \File::files("/ASPEDI/PRODUCCION/ENTRADA");
-        $files = \File::files(storage_path("app/tmp"));
+        $files = \File::files("/ASPEDI/PRODUCCION/ENTRADA");
+        //$files = \File::files(storage_path("app/tmp"));
         foreach($files as $file) {
             if($this->isXml($file)) {
                 $pedido = $this->getOrderObject($file);
