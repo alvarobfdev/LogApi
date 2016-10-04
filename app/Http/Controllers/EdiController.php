@@ -35,7 +35,17 @@ class EdiController extends Controller
 
     private $productsNotFound = [];
 
-    
+    /*public function getFix() {
+        $files = \File::files(storage_path("app/tmp/fix"));
+        foreach($files as $file) {
+            $xml = new \SimpleXMLElement(file_get_contents($file));
+            $xml->attributes()->DESTINO = "8422416000016";
+            $url = $this->generateXmlFile($xml);
+            sleep(1);
+        }
+
+
+    }*/
 
     public function getSaveAlbaranEdiPdf($ejerci, $codcli, $codAlbaran, $seralb=null) {
         $query = "SELECT * FROM albaran WHERE tipalb='S' AND codcli=$codcli AND ejerci=$ejerci and numalb = $codAlbaran";
@@ -197,8 +207,8 @@ class EdiController extends Controller
         $dom->formatOutput = TRUE;
         $formatted = $dom->saveXML();
         $datetime = Carbon::create()->format("Ymdhis");
-        $route = "/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml";
-        //$route = storage_path("app/tmp/").$datetime.".xml";
+        //$route = "/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml";
+        $route = storage_path("app/tmp/").$datetime.".xml";
         file_put_contents($route, $formatted);
         return $route;
     }
@@ -602,7 +612,7 @@ class EdiController extends Controller
         if($comprador && $comprador->nombre_fiscal=="EL CORTE INGLÉS, S.A.") {
             $albaranEdi->destino = "8422416000016";
         }
-        if($comprador && $comprador->nombre_fiscal=="DIA S.A") {
+        else if($comprador && $comprador->nombre_fiscal=="DIA S.A") {
             $albaranEdi->destino = "8480017300003";
         }
         else $albaranEdi->destino = $pedidoEdi->comprador;
