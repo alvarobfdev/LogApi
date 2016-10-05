@@ -74,8 +74,8 @@
             return JSON.parse(JSON.stringify(object));
         }
 
-        function generateHtmlLine(line) {
-            return '<div>'+line.codart+' '+line.descri+' x '+line.cantid+'uds.';
+        function generateHtmlLine(line, bultoId, lineaId) {
+            return '<div>'+line.codart+' '+line.descri+' x '+line.cantid+'uds.'+' <a href="javascript:void(0);" id="deleteLineFromBulto" data-bulto-id="'+bultoId+'" data-linea-id="'+lineaId+'" >Borrar</a> ';
         }
 
         function generateNumBultosHtml(bulto, idBulto) {
@@ -107,7 +107,7 @@
         function getBultoRow(bulto, idBulto) {
             var html = '<tr><td class="bulto">';
             for(var i=0; i<bulto.lineas.length; i++) {
-                html += generateHtmlLine(bulto.lineas[i]);
+                html += generateHtmlLine(bulto.lineas[i], idBulto, i);
             }
             html += generateNumBultosHtml(bulto, idBulto);
             html += generatePaletsSelector(idBulto);
@@ -243,8 +243,29 @@
             })
         }
 
+        function deleteBulto(idBulto) {
+            bultos.splice(idBulto, 1);
+        }
+
+        function deleteLineFromBulto(idBulto, idLinea) {
+            bultos[idBulto].lineas.splice(idLinea, 1);
+            if(bultos[idBulto].lineas.length == 0) {
+                deleteBulto(idBulto);
+            }
+
+            updateCantidadesLineas();
+            drawTableBultos();
+        }
+
 
         $(function() {
+
+            $(document).on('click','#deleteLineFromBulto', function() {
+                var idBulto = $(this).attr('data-bulto-id');
+                var lineaId = $(this).attr('data-linea-id');
+                deleteLineFromBulto(idBulto, lineaId);
+            });
+
             $('#addBulto').click(function() {
                 addBulto();
                 drawTableBultos();
