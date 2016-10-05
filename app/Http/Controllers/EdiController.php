@@ -207,8 +207,8 @@ class EdiController extends Controller
         $dom->formatOutput = TRUE;
         $formatted = $dom->saveXML();
         $datetime = Carbon::create()->format("Ymdhis");
-        //$route = "/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml";
-        $route = storage_path("app/tmp/").$datetime.".xml";
+        $route = "/ASPEDI/PRODUCCION/SALIDA/".$datetime.".xml";
+        //$route = storage_path("app/tmp/").$datetime.".xml";
         file_put_contents($route, $formatted);
         return $route;
     }
