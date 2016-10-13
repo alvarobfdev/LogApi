@@ -180,7 +180,7 @@ class EdiController extends Controller
 
     private function uploadEdiXml($codcli, $ejerci, $numalb) {
         $routeFile = $this->generateEdi($codcli, $ejerci, $numalb);
-        $this->uploadEdi();
+        //$this->uploadEdi();
     }
 
     private function uploadEdi() {
