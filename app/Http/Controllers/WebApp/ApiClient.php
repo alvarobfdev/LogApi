@@ -19,6 +19,7 @@ class ApiClient
     public static $HOST = "http://localhost/logivalApi/public/api/v1";
     public static $URI = "/api/v1";
     private static $me = null;
+    private static $lastResult = 0;
 
     /**
      * @return ApiClient|null
@@ -30,27 +31,35 @@ class ApiClient
         return self::$me;
     }
 
-    public static function getClientes($params = array()) {
+    public static function getClientes($params = array(), &$status = 200) {
 
         //$url = $me->getEncodedUrl("clientes", $params);
         //$result = $me->callApiUrl($url);
         $result = self::getResultFromApi("clientes", "GET", $params);
+        $status = self::$lastResult;
         return $result;
     }
 
-    public static function getPedidos($params = array()) {
+    public static function getPedidos($params = array(), &$status = 200) {
         $result = self::getResultFromApi("pedidos", "GET", $params);
+        $status = self::$lastResult;
         return $result;
     }
 
-    private function getRequest($seccion, $method = 'GET', $params = array()) {
-        $request = \Request::create(self::$URI."/$seccion", $method, $params);
+    public static function updatePedido($idPedido, &$status = 200) {
+        $result = self::getResultFromApi("pedidos", "PUT", array(), $idPedido);
+        $status = self::$lastResult;
+        return $result;
+    }
+
+    private function getRequest($seccion, $method = 'GET', $params = array(), $id = "") {
+        $request = \Request::create(self::$URI."/$seccion/$id", $method, $params);
         $request->headers->set('Content-type', 'application/json');
         $request->headers->set('Auth-Key', self::$AUTH_KEY);
         $request->headers->set('Auth-Token', self::$AUTH_TOKEN);
-        \Request::replace($request->input());
+        if($method == "GET")
+            \Request::replace($request->input());
         return $request;
-
     }
 
     private function getRequestTokenUrl($requestObject) {
@@ -105,12 +114,19 @@ class ApiClient
      * @param $params
      * @return \Illuminate\Http\Response|mixed
      */
-    private static function getResultFromApi($section, $method, $params)
+    private static function getResultFromApi($section, $method, $params = array(), $id = "")
     {
         $me = self::getInstance();
-        $request = $me->getRequest($section, $method, $params);
+        $request = $me->getRequest($section, $method, $params, $id);
         $result = \Route::dispatch($request);
-        return $result->original->toJson();
+        self::$lastResult = $result->status();
+        if(self::isJson($result->original))
+            return $result->original;
+        else return $result->original->toJson();
+    }
+
+    private static function isJSON($string){
+        return is_string($string) && is_array(json_decode($string, true)) ? true : false;
     }
 
 

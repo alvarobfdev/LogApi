@@ -117,7 +117,8 @@ class Pedido extends Model
     ];
 
     public static $adminValidationFilters = [
-        'codcli' => 'integer'
+        'codcli' => 'integer',
+        '_id' => 'string',
     ];
 
 
@@ -139,5 +140,9 @@ class Pedido extends Model
 
     public function lineasPedido() {
         return $this->embedsMany('App\RestApiModels\LineasPedido');
+    }
+
+    public function cliente() {
+        return $this->hasOne('App\RestApiModels\Cliente', 'codcli', 'codcli');
     }
 }

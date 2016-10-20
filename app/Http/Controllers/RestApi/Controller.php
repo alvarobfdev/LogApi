@@ -29,6 +29,7 @@ class Controller extends \App\Http\Controllers\Controller
     protected $filters = [];
     protected $orFilters = [];
     protected $orQuery = null;
+    protected $relations = [];
 
 
     public function index(Request $request) {
@@ -63,6 +64,14 @@ class Controller extends \App\Http\Controllers\Controller
             if($request->has("order") && $request->get("order") == "desc") {
                 $this->order = "DESC";
             }
+        }
+
+        if($request->has("relations")) {
+            if(!is_array($request->get("relations"))) {
+                $response['errors'] = ["Relations input must be an array"];
+                return response(json_encode($response), 405);
+            }
+            $this->relations = $request->get("relations");
         }
         return false;
     }
@@ -126,10 +135,10 @@ class Controller extends \App\Http\Controllers\Controller
 
     protected function getBuildedCollection($class, $collection, $user, $request) {
         $validFilters = $class::$validationFilters;
-        $clientes = $this->getFilteredBuilder($validFilters, $collection);
+        $collection = $this->getFilteredBuilder($validFilters, $collection);
         if($user->isAdmin == 1){
             $validFilters = $class::$adminValidationFilters;
-            $clientes = $this->getFilteredBuilder($validFilters, $clientes);
+            $collection = $this->getFilteredBuilder($validFilters, $collection);
         }
 
         if($request->has("limit")) {
@@ -138,14 +147,19 @@ class Controller extends \App\Http\Controllers\Controller
         }
 
         if($this->orderby) {
-            $clientes = $clientes->orderby($this->orderby, $this->order);
+            $collection = $collection->orderby($this->orderby, $this->order);
+        }
+
+        foreach($this->relations as $relation) {
+            $collection = $collection->with($relation);
+
         }
 
         if($user->isAdmin == 1) {
-            return $clientes->paginate($this->limitPerPage);
+            return $collection->paginate($this->limitPerPage);
         }
 
-        else return $clientes->select($class::$showable)->paginate($this->limitPerPage);
+        else return $collection->select($class::$showable)->paginate($this->limitPerPage);
     }
 
     /**

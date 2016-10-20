@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 
+use App\AlbaranEdiLineas;
 use App\Artic;
 use App\Ctsql;
 use App\EdiCabped;
@@ -24,18 +25,88 @@ use App\WoocommerceApi;
 class AppController extends Controller
 {
 
-    public function getTestCtsql() {
-        $query = "SELECT * FROM artic WHERE codcli=176";
-        $exporter = new Ctsql();
-        $resultArray = $exporter->ctsqlExport($query);
-        if(is_array($resultArray) && count($resultArray) > 0) {
-            $json = $resultArray[0];
-            $result = json_decode($json);
-            dd($result);
-            return $json;
-        }
-        return "Ha habido algún problema!";
+    public function getExample() {
+        $sql = "SELECT * FROM pedidos WHERE codcli=176 LIMIT 0,5";
+        $data = Ctsql::ctsqlExportData($sql);
+        dd($data[0]->observ);
     }
+
+    public function getCopyProducts() {
+        $sql = "SELECT * FROM artic WHERE codcli = 176 AND (codart='055684' OR codart='055678')";
+        $data = Ctsql::ctsqlExportData($sql);
+        foreach($data as $artic) {
+            $columns = [];
+            $values = [];
+            foreach($artic as $index=>$value) {
+                $columns[] = $index;
+                if($index == "codart") {
+                    if($value == '055678')
+                        $value = 9073140000;
+                    else
+                        $value = 9073180000;
+                }
+                $value = "'$value'";
+                $values[] = $value;
+            }
+            $columns = implode(", ", $columns);
+            $values = implode(", ", $values);
+            $columns = "(".$columns.")";
+            $values = "(".$values.")";
+            $sql = "INSERT INTO artic $columns VALUES $values";
+            //Ctsql::ctsqlImport($sql);
+
+
+
+
+        }
+    }
+    public function getBultosEci() {
+        "SELECT * FROM linalbaran WHERE fecalb = '05/10/2016' OR fecalb='06/10/2016' AND codcli=176";
+    }
+
+    public function getCtsqlTest() {
+        $query = "SELECT * FROM albaran WHERE codcli=176 ORDER BY fecalb DESC LIMIT 0,1";
+        $result = Ctsql::ctsqlExport($query);
+        $result = $result[0];
+        dd(json_decode($result));
+    }
+
+    public function getModifyPedidos() {
+        $artics = [
+        25476921,
+        25476939,
+        25645418,
+        25476889,
+        25476897,
+        25545386,
+        25545394,
+        25545402,
+        25545410,
+        21974549,
+        21974556,
+        25645426,
+        25476905,
+        25476913,
+        25545428,
+        25545436,
+        25545444,
+        25545451,
+        21974564,
+        21974572];
+
+        foreach($artics as $artic) {
+            $sql = "SELECT * FROM artic WHERE codcli=176 and codart='$artic'";
+            $result = Ctsql::ctsqlExport($sql);
+            $descri = json_decode($result[0]);
+            $descri = $descri->data[0]->descri;
+            $sql = "UPDATE linpedidos SET descri='$descri' WHERE tipped='S' AND numped > 31 AND numped < 122 AND codcli=176 AND codart='{$artic}'";
+            //$result = Ctsql::ctsqlImport($sql);
+            echo $sql . " -> <br>";
+            var_dump($result);
+            echo "<br><br>";
+        }
+    }
+
 
     public function getAlbaranForEdi() {
 
@@ -103,7 +174,7 @@ class AppController extends Controller
             foreach($webProducts->products as $webProduct) {
                 if($index == $webProduct->sku) {
                     $coincide=true;
-                    echo "<span style='color:green;'>".$index ." -> ". $producto["descripcion"] ." -> ". $producto["cantidad"]." -- EXISTE EN WEB Y STOCK</span><br>";
+                    echo "<span style='color:green;'>".$index ." -> ". $producto["descripcion"] ." -> ". $producto["cantidad"]."/".$webProduct->stock_quantity." -- EXISTE EN WEB Y STOCK</span><br>";
                 }
             }
             if(!$coincide) {
@@ -475,5 +546,46 @@ VALUES
         }
     }
 
+
+    public function getInsertLinesToPedidos() {
+        ini_set('max_execution_time', 0);
+
+        $clientes = Cliente::all();
+
+
+        foreach($clientes as $cliente) {
+            echo "Importando líneas cliente ".$cliente->codcli."...<br>";
+            ob_flush(); flush();
+            $skip = 0;
+            do {
+                $totalLines = 0;
+                $pedidos = Pedido::where("codcli", $cliente->codcli)->skip($skip)->take(500)->get();
+                foreach ($pedidos as $pedido) {
+                    $lineasPedido = LineasPedido::where("codemp", $pedido->codemp)
+                        ->where("coddel", $pedido->coddel)
+                        ->where("codcli", $pedido->codcli)
+                        ->where("tipped", $pedido->tipped)
+                        ->where("serped", $pedido->serped)
+                        ->where("ejeped", $pedido->ejeped)
+                        ->where("numped", $pedido->numped)
+                        ->get();
+
+                    foreach ($lineasPedido as $lineaPedido) {
+                        $pedido->lineasPedido()->associate($lineaPedido);
+                    }
+                    $pedido->save();
+
+                    //$pedido->lineasPedido()->delete();
+
+                    $totalLines += $lineasPedido->count();
+                }
+                $skip += 500;
+                echo "$totalLines líneas importadas<br>";
+                ob_flush(); flush();
+            } while($pedidos->count() == 500);
+            echo "Todas las líneas importadas<br>";
+            ob_flush(); flush();
+        }
+    }
 
 }
