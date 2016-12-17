@@ -668,16 +668,9 @@ class EdiController extends Controller
                     $result = json_decode($result[0]);
                     $articulo = $result->data[0];
 
-                    $query = "SELECT * FROM linalbar WHERE codemp=1 AND coddel = 1 AND codcli = ".$albaran->codcli." AND tipalb = 'S' AND ejerci = ".$albaran->ejerci.
-                        "AND numalb='".$albaran->numalb . "' AND numlin = ".($j+1);
+                    $this->getLinAlbaran($albaran->ejerci, $albaran->codcli, $albaran->numalb, $lineasAlbaran, $numSerie);
 
-                    if($numSerie != "") {
-                        $query .= " AND seralb = '$numSerie'";
-                    }
-
-                    $articulos = Ctsql::ctsqlExport($query);
-                    $articulos = json_decode($articulos[0]);
-                    $articuloLinea = $articulos->data[0];
+                    $articuloLinea = $lineasAlbaran[$j];
 
 
                     $udsBulto = $lineas[$j]->cantid/$lineas[$j]->bultos;
@@ -1318,6 +1311,24 @@ class EdiController extends Controller
 
         $linAlbaran = $linAlbaran->data;
 
+        $linAlbaranTogether = [];
+
+        foreach($linAlbaran as $linea) {
+            if(!key_exists($linea->codart, $linAlbaranTogether)) {
+                $linAlbaranTogether[$linea->codart] = $linea;
+            }
+            else {
+                $linAlbaranTogether[$linea->codart]->cantid  += $linea->cantid;
+                $linAlbaranTogether[$linea->codart]->bultos  += $linea->bultos;
+            }
+        }
+
+        $linAlbaran = [];
+        foreach ($linAlbaranTogether as $linea) {
+            $linAlbaran[] = $linea;
+        }
+
+
 
         return true;
     }
@@ -1432,6 +1443,8 @@ class EdiController extends Controller
 
     private function savePedido($pedido) {
 
+
+
         $cab = new EdiCabped();
         foreach(get_object_vars($pedido) as $index=>$var) {
             if(!is_array($var) && \Schema::connection('mysql')->hasColumn($cab->getTable(), $index)) {
@@ -1484,17 +1497,19 @@ class EdiController extends Controller
         $fecped = $fechaPedido->format("d/m/Y");
         $fecent = $fechaEntrega->format("d/m/Y");
         $receptor = EdiClientes::where("ean", $cabped->receptor)->first();
-        $nomtec = $receptor->nombre;
+        $nomtec = addslashes($receptor->nombre);
         $nomfis = $receptor->nombre_fiscal;
-        $dirtec = $receptor->direccion;
-        $pobtec = $receptor->poblacion . " (".$receptor->provincia.")";
+        $dirtec = addslashes($receptor->direccion);
+        $pobtec = addslashes($receptor->poblacion) . " (".addslashes($receptor->provincia).")";
         $cpotec = $receptor->cp;
         $observ = $receptor->observaciones . " No. PEDIDO: ".$refped;
         if($receptor->tfno) {
             $observ .= " TFNO: ".$receptor->tfno;
         }
         $pobdis = $pobtec;
+        //$ejeped = Carbon::now()->year;
         $ctsql = "SELECT MAX(numped) as maxped FROM pedidos WHERE codcli=$codcli";
+        //$ctsql.=" AND ejeped=$ejeped";
         $eanReceptor = substr_replace($receptor->ean, '', -1);
         $maxPedido = Ctsql::ctsqlExport($ctsql);
         $maxPedido = json_decode($maxPedido[0]);
@@ -1542,7 +1557,8 @@ class EdiController extends Controller
             ."'', ''"
             .")";
 
-        Ctsql::ctsqlImport($query);
+        $result = Ctsql::ctsqlImport($query);
+        $result = json_decode($result[0]);
         $this->productsNotFound = [];
         $this->saveLineasPedido($cabped, $codcli, $numped);
         $this->checkNotFoundProducts();

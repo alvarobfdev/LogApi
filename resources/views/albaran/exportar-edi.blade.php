@@ -808,6 +808,7 @@
             for(var i=0; i < locs.length; i++) {
                 var tiendaIndex = getTiendaIndexFromEan(locs[i].lugar);
                 var lineIndex = getLinAlbaranIndexFromCodart(locs[i].codart);
+                console.log(lineasAlbaran);
                 var udsBulto = lineasAlbaran[lineIndex].udsbul;
                 bultosTiendas[tiendaIndex][lineIndex] = locs[i].cantidad / udsBulto;
             }
